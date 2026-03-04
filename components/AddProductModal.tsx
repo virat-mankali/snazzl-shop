@@ -1,0 +1,764 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { X, Upload, Trash2, ChevronDown } from 'lucide-react';
+import { useMutation } from 'convex/react';
+import Toast from './Toast';
+
+interface AddProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
+}
+
+// Dropdown data from dropdown.md
+const MAIN_CATEGORIES = [
+  'Tops',
+  'Bottoms',
+  'Innerwear',
+  'Accessories',
+  'Activewear / Athleisure',
+  'Hoodies & Sweatshirts',
+  'Dresses',
+  'Footwear',
+  'Ethnic Wear',
+  'Basics',
+  'Beauty & Personal Care'
+];
+
+const SUB_CATEGORIES: Record<string, string[]> = {
+  'Tops': ['T-Shirts', 'Shirts', 'Crop Tops', 'Tank Tops', 'Blouses', 'Polo Tees', 'Tunics'],
+  'Bottoms': ['Jeans', 'Trousers', 'Shorts', 'Skirts', 'Joggers', 'Leggings', 'Cargo Pants'],
+  'Innerwear': ['Bras', 'Panties', 'Boxers', 'Briefs', 'Vests', 'Camisoles'],
+  'Accessories': ['Belts', 'Caps', 'Wallets', 'Watches', 'Bags', 'Sunglasses', 'Jewelry'],
+  'Activewear / Athleisure': ['Gym T-Shirts', 'Track Pants', 'Shorts', 'Sports Bras', 'Joggers', 'Sweatpants'],
+  'Hoodies & Sweatshirts': ['Zip-up Hoodies', 'Pullover Hoodies', 'Crew Neck Sweatshirts', 'Oversized Hoodies'],
+  'Dresses': ['Mini Dress', 'Maxi Dress', 'Bodycon Dress', 'A-line Dress', 'Shirt Dress'],
+  'Footwear': ['Sneakers', 'Sandals', 'Formal Shoes', 'Flip-Flops', 'Boots', 'Loafers'],
+  'Ethnic Wear': ['Kurta', 'Kurti', 'Sherwani', 'Saree', 'Lehenga', 'Dupatta'],
+  'Basics': ['Plain Tees', 'Everyday Shirts', 'Casual Pants', 'Shorts', 'Socks'],
+  'Beauty & Personal Care': ['Skincare', 'Haircare', 'Makeup', 'Fragrance', 'Bath & Body', 'Grooming Essentials']
+};
+
+const FITS = [
+  'Slim Fit',
+  'Regular Fit',
+  'Relaxed Fit',
+  'Skinny Fit',
+  'Tapered Fit',
+  'Oversized Fit',
+  'Comfort Fit',
+  'Loose Fit',
+  'Tailored Fit'
+];
+
+interface ImageUpload {
+  id: string;
+  file: File;
+  preview: string;
+  label: string;
+}
+
+export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
+  const [images, setImages] = useState<ImageUpload[]>([]);
+  const [coverImage, setCoverImage] = useState<{ file: File | null; preview: string | null }>({ 
+    file: null, 
+    preview: null 
+  });
+  const [productName, setProductName] = useState('');
+  const [colors, setColors] = useState<Array<{ name: string; picker: string }>>([
+    { name: '', picker: '#000000' }
+  ]);
+  const [mainCategory, setMainCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [fit, setFit] = useState('');
+  const [availableSizes, setAvailableSizes] = useState<number[]>([]);
+  const [basePrice, setBasePrice] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [material, setMaterial] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [stock, setStock] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showMainCategoryDropdown, setShowMainCategoryDropdown] = useState(false);
+  const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
+  const [showFitDropdown, setShowFitDropdown] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
+  
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const imageLabels = [
+    'Product front side image',
+    'Product left side image',
+    'Product back side image',
+    'Product right side image'
+  ];
+
+  const commonSizes = [28, 30, 32, 34, 36, 38, 40, 42];
+
+  const toggleSize = (size: number) => {
+    if (availableSizes.includes(size)) {
+      setAvailableSizes(availableSizes.filter(s => s !== size));
+    } else {
+      setAvailableSizes([...availableSizes, size].sort((a, b) => a - b));
+    }
+  };
+
+  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const preview = URL.createObjectURL(file);
+      setCoverImage({ file, preview });
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && images.length < 4) {
+      const newImages: ImageUpload[] = [];
+      const remainingSlots = 4 - images.length;
+      
+      for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
+        const file = files[i];
+        newImages.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file,
+          preview: URL.createObjectURL(file),
+          label: imageLabels[images.length + i]
+        });
+      }
+      
+      setImages([...images, ...newImages]);
+    }
+  };
+
+  const removeImage = (id: string) => {
+    setImages(images.filter(img => img.id !== id));
+  };
+
+  const addProduct = useMutation('products:addProduct' as any);
+  const generateUploadUrl = useMutation('products:generateUploadUrl' as any);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to resize image to max 2MB
+  const resizeImage = async (file: File): Promise<Blob> => {
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+    
+    // If file is already under 2MB, return it as-is
+    if (file.size <= MAX_SIZE) {
+      return file;
+    }
+    
+    // Otherwise, compress it to 2MB
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          let quality = 0.9;
+          
+          // Start with original dimensions, will reduce if needed
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Try to compress to under 2MB
+          const tryCompress = (q: number, w: number, h: number) => {
+            canvas.width = w;
+            canvas.height = h;
+            const context = canvas.getContext('2d');
+            context?.drawImage(img, 0, 0, w, h);
+            
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  if (blob.size <= MAX_SIZE || q <= 0.1) {
+                    // Under 2MB or minimum quality reached
+                    resolve(blob);
+                  } else if (q > 0.3) {
+                    // Try with lower quality first
+                    tryCompress(q - 0.1, w, h);
+                  } else {
+                    // If quality is already low, reduce dimensions
+                    const newWidth = Math.floor(w * 0.9);
+                    const newHeight = Math.floor(h * 0.9);
+                    tryCompress(0.9, newWidth, newHeight);
+                  }
+                } else {
+                  reject(new Error('Failed to create blob'));
+                }
+              },
+              'image/jpeg',
+              q
+            );
+          };
+          
+          tryCompress(quality, width, height);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Upload image to Convex storage
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      // Resize the image first
+      console.log('Resizing image:', file.name);
+      const resizedBlob = await resizeImage(file);
+      console.log('Image resized, size:', resizedBlob.size);
+      
+      // Get upload URL from Convex
+      console.log('Getting upload URL...');
+      const uploadUrl = await generateUploadUrl();
+      console.log('Upload URL received:', uploadUrl);
+      
+      // Upload the resized image
+      console.log('Uploading to storage...');
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': resizedBlob.type },
+        body: resizedBlob,
+      });
+      
+      if (!result.ok) {
+        throw new Error(`Upload failed: ${result.statusText}`);
+      }
+      
+      const { storageId } = await result.json();
+      console.log('Storage ID received:', storageId);
+      return storageId;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!productName.trim()) {
+      setToast({ message: 'Please enter a product name', type: 'error' });
+      return;
+    }
+    if (colors.length === 0 || !colors[0].name.trim()) {
+      setToast({ message: 'Please enter at least one color', type: 'error' });
+      return;
+    }
+    if (!mainCategory.trim() || !subCategory.trim()) {
+      setToast({ message: 'Please select both main and sub category', type: 'error' });
+      return;
+    }
+    if (!fit.trim()) {
+      setToast({ message: 'Please select a fit type', type: 'error' });
+      return;
+    }
+    if (availableSizes.length === 0) {
+      setToast({ message: 'Please select at least one size', type: 'error' });
+      return;
+    }
+    if (!basePrice || parseFloat(basePrice) <= 0) {
+      setToast({ message: 'Please enter a valid base price', type: 'error' });
+      return;
+    }
+    if (!material.trim()) {
+      setToast({ message: 'Please enter a material', type: 'error' });
+      return;
+    }
+    if (!productDescription.trim()) {
+      setToast({ message: 'Please enter a product description', type: 'error' });
+      return;
+    }
+    if (!stock || parseInt(stock) < 0) {
+      setToast({ message: 'Please enter a valid stock quantity', type: 'error' });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setUploadProgress('Starting upload...');
+      console.log('Starting product submission...');
+      
+      // Upload images to Convex storage
+      const productImages: {
+        cover_image?: string;
+        front_image?: string;
+        left_image?: string;
+        back_image?: string;
+        right_image?: string;
+      } = {};
+      
+      const totalImages = (coverImage.file ? 1 : 0) + images.length;
+      let uploadedCount = 0;
+      
+      // Upload cover image
+      if (coverImage.file) {
+        setUploadProgress(`Uploading cover image... (${uploadedCount + 1}/${totalImages})`);
+        console.log('Uploading cover image...');
+        productImages.cover_image = await uploadImage(coverImage.file);
+        uploadedCount++;
+        console.log('Cover image uploaded:', productImages.cover_image);
+      }
+      
+      // Upload additional images
+      const imageKeys = ['front_image', 'left_image', 'back_image', 'right_image'] as const;
+      for (let i = 0; i < images.length; i++) {
+        if (images[i].file) {
+          setUploadProgress(`Uploading ${imageLabels[i]}... (${uploadedCount + 1}/${totalImages})`);
+          console.log(`Uploading ${imageKeys[i]}...`);
+          productImages[imageKeys[i]] = await uploadImage(images[i].file);
+          uploadedCount++;
+          console.log(`${imageKeys[i]} uploaded:`, productImages[imageKeys[i]]);
+        }
+      }
+
+      const productData = {
+        product_name: productName,
+        colors: colors.filter(c => c.name.trim()),
+        category: {
+          main_category: mainCategory,
+          sub_category: subCategory
+        },
+        size: {
+          fit: fit,
+          available_sizes: availableSizes
+        },
+        price: {
+          base_price: parseFloat(basePrice),
+          discount: parseFloat(discount) || 0
+        },
+        material: material,
+        product_description: productDescription,
+        stock: parseInt(stock),
+        product_images: productImages,
+      };
+      
+      setUploadProgress('Saving product details...');
+      console.log('Submitting product data:', productData);
+      const result = await addProduct(productData);
+      console.log('Product added successfully:', result);
+      setUploadProgress('Product added successfully!');
+      
+      // Reset form
+      setProductName('');
+      setColors([{ name: '', picker: '#000000' }]);
+      setMainCategory('');
+      setSubCategory('');
+      setFit('');
+      setAvailableSizes([]);
+      setBasePrice('');
+      setDiscount('');
+      setMaterial('');
+      setProductDescription('');
+      setStock('');
+      setCoverImage({ file: null, preview: null });
+      setImages([]);
+      
+      setToast({ message: 'Product added successfully!', type: 'success' });
+      onSuccess?.();
+      setTimeout(() => {
+        onClose();
+        setUploadProgress('');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error adding product:', error);
+      const errorMessage = error?.message || error?.toString() || 'Failed to add product. Please try again.';
+      setToast({ message: errorMessage, type: 'error' });
+      setUploadProgress('');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-gray-50 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X size={20} />
+              </button>
+              <h2 className="text-xl font-semibold text-black">Add Products</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Publishing...' : 'Publish'}
+              </button>
+            </div>
+          </div>
+          {/* Progress Indicator */}
+          {uploadProgress && (
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="bg-blue-600 h-full rounded-full animate-pulse" style={{ width: '100%' }}></div>
+              </div>
+              <span className="text-sm text-gray-600 whitespace-nowrap">{uploadProgress}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="grid grid-cols-3 gap-6">
+            {/* Left Column - Image Upload */}
+            <div className="bg-white rounded-xl p-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Upload Image</h3>
+              
+              {/* Cover Image Upload */}
+              <div 
+                onClick={() => coverInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 cursor-pointer hover:border-blue-500 transition-colors bg-gray-50"
+              >
+                {coverImage.preview ? (
+                  <div className="relative">
+                    <img src={coverImage.preview} alt="Cover" className="w-full h-48 object-cover rounded-lg" />
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Upload className="text-blue-600" size={24} />
+                    </div>
+                    <p className="text-blue-600 font-medium mb-1">Upload Image</p>
+                    <p className="text-xs text-gray-500">Upload a cover image for your product.</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      File Format <span className="text-black">jpeg, png</span> Recommended Size{' '}
+                      <span className="text-black">600x600 (1:1)</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                onChange={handleCoverImageUpload}
+                className="hidden"
+              />
+
+              {/* Additional Images */}
+              <div className="space-y-3">
+                {images.map((image) => (
+                  <div key={image.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                      <Upload className="text-blue-600" size={18} />
+                    </div>
+                    <span className="text-sm text-black flex-1">{image.label}</span>
+                    <button
+                      onClick={() => removeImage(image.id)}
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+                
+                {images.length < 4 && (
+                  <div
+                    onClick={() => imageInputRef.current?.click()}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                  >
+                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                      <Upload className="text-blue-600" size={18} />
+                    </div>
+                    <span className="text-sm text-gray-600 flex-1">
+                      {imageLabels[images.length]}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Right Columns - Form Fields */}
+            <div className="col-span-2 space-y-6">
+              {/* Row 1 - Product Name */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">Product Name</label>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Slim Fit Denim Jeans"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Row 2 - Colors */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">Colors</label>
+                <div className="space-y-3">
+                  {colors.map((color, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={color.name}
+                        onChange={(e) => {
+                          const newColors = [...colors];
+                          newColors[index].name = e.target.value;
+                          setColors(newColors);
+                        }}
+                        placeholder="Dark Blue"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                      />
+                      <input
+                        type="color"
+                        value={color.picker}
+                        onChange={(e) => {
+                          const newColors = [...colors];
+                          newColors[index].picker = e.target.value;
+                          setColors(newColors);
+                        }}
+                        className="w-12 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={color.picker}
+                        onChange={(e) => {
+                          const newColors = [...colors];
+                          newColors[index].picker = e.target.value;
+                          setColors(newColors);
+                        }}
+                        placeholder="#00008B"
+                        className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                      />
+                      {colors.length > 1 && (
+                        <button
+                          onClick={() => setColors(colors.filter((_, i) => i !== index))}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setColors([...colors, { name: '', picker: '#000000' }])}
+                    className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium text-sm"
+                  >
+                    <span className="text-lg">+</span>
+                    <span>Add Color</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 3 - Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-black mb-2">Main Category</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMainCategoryDropdown(!showMainCategoryDropdown)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between"
+                  >
+                    <span className={mainCategory || 'text-gray-400'}>{mainCategory || 'Select category'}</span>
+                    <ChevronDown size={18} />
+                  </button>
+                  {showMainCategoryDropdown && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {MAIN_CATEGORIES.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => {
+                            setMainCategory(cat);
+                            setSubCategory('');
+                            setShowMainCategoryDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <label className="block text-sm font-medium text-black mb-2">Sub Category</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubCategoryDropdown(!showSubCategoryDropdown)}
+                    disabled={!mainCategory}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className={subCategory || 'text-gray-400'}>{subCategory || 'Select sub category'}</span>
+                    <ChevronDown size={18} />
+                  </button>
+                  {showSubCategoryDropdown && mainCategory && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {SUB_CATEGORIES[mainCategory]?.map((subCat) => (
+                        <button
+                          key={subCat}
+                          type="button"
+                          onClick={() => {
+                            setSubCategory(subCat);
+                            setShowSubCategoryDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                        >
+                          {subCat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Row 4 - Size */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-black mb-2">Fit</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowFitDropdown(!showFitDropdown)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between"
+                  >
+                    <span className={fit || 'text-gray-400'}>{fit || 'Select fit'}</span>
+                    <ChevronDown size={18} />
+                  </button>
+                  {showFitDropdown && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {FITS.map((fitOption) => (
+                        <button
+                          key={fitOption}
+                          type="button"
+                          onClick={() => {
+                            setFit(fitOption);
+                            setShowFitDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                        >
+                          {fitOption}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">Available Sizes</label>
+                  <div className="flex flex-wrap gap-2">
+                    {commonSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => toggleSize(size)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          availableSizes.includes(size)
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 5 - Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">Base Price (₹)</label>
+                  <input
+                    type="number"
+                    value={basePrice}
+                    onChange={(e) => setBasePrice(e.target.value)}
+                    placeholder="1999"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">Discount (%)</label>
+                  <input
+                    type="number"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    placeholder="15"
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Row 6 - Material & Stock */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">Material</label>
+                  <input
+                    type="text"
+                    value={material}
+                    onChange={(e) => setMaterial(e.target.value)}
+                    placeholder="Denim"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-black mb-2">Stock Quantity</label>
+                  <input
+                    type="number"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    placeholder="100"
+                    min="0"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Row 7 - Product Description */}
+              <div>
+                <label className="block text-sm font-medium text-black mb-2">Product Description</label>
+                <textarea
+                  value={productDescription}
+                  onChange={(e) => setProductDescription(e.target.value)}
+                  placeholder="Classic dark blue slim fit jeans made from stretchable denim fabric."
+                  rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400 resize-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
+  );
+}
