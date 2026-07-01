@@ -20,17 +20,12 @@ export default function OTPVerificationModal({
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const inputRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (isOpen) {
       // Focus first input when modal opens
-      inputRefs[0].current?.focus();
+      inputRefs.current[0]?.focus();
       // Reset state
       setOtp(['', '', '', '']);
       setVerificationStatus('idle');
@@ -48,13 +43,13 @@ export default function OTPVerificationModal({
 
     // Auto-focus next input
     if (value && index < 3) {
-      inputRefs[index + 1].current?.focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
+      inputRefs.current[index - 1]?.focus();
     }
   };
 
@@ -71,7 +66,7 @@ export default function OTPVerificationModal({
 
     // Focus last filled input or next empty
     const nextIndex = Math.min(pastedData.length, 3);
-    inputRefs[nextIndex].current?.focus();
+    inputRefs.current[nextIndex]?.focus();
   };
 
   const handleVerify = async () => {
@@ -98,13 +93,13 @@ export default function OTPVerificationModal({
         setErrorMessage(result.message);
         // Clear OTP for retry
         setOtp(['', '', '', '']);
-        inputRefs[0].current?.focus();
+        inputRefs.current[0]?.focus();
       }
-    } catch (error) {
+    } catch {
       setVerificationStatus('error');
       setErrorMessage('Verification failed. Please try again.');
       setOtp(['', '', '', '']);
-      inputRefs[0].current?.focus();
+      inputRefs.current[0]?.focus();
     } finally {
       setIsVerifying(false);
     }
@@ -118,7 +113,7 @@ export default function OTPVerificationModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-500 transition-colors"
           disabled={isVerifying}
         >
           <X size={24} />
@@ -126,14 +121,14 @@ export default function OTPVerificationModal({
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#F8EEE8] rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">🔐</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify OTP</h2>
-          <p className="text-gray-600 text-sm">
+          <h2 className="text-2xl font-bold text-[#171719] mb-2">Verify OTP</h2>
+          <p className="text-slate-500 text-sm">
             Enter the 4-digit OTP provided by the delivery agent
           </p>
-          <p className="text-gray-500 text-xs mt-2">
+          <p className="text-slate-500 text-xs mt-2">
             Order ID: <span className="font-mono font-semibold">{orderId}</span>
           </p>
         </div>
@@ -144,7 +139,9 @@ export default function OTPVerificationModal({
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={inputRefs[index]}
+                ref={(element) => {
+                  inputRefs.current[index] = element;
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
@@ -154,11 +151,11 @@ export default function OTPVerificationModal({
                 onPaste={handlePaste}
                 disabled={isVerifying || verificationStatus === 'success'}
                 className={`w-14 h-14 text-center text-2xl font-bold border-2 rounded-xl transition-all
-                  ${verificationStatus === 'success' 
-                    ? 'border-green-500 bg-green-50 text-green-600' 
+                  ${verificationStatus === 'success'
+                    ? 'border-[#A3B18A] bg-[#EDF2E8] text-[#5C7251]'
                     : verificationStatus === 'error'
-                    ? 'border-red-500 bg-red-50 text-red-600 animate-shake'
-                    : 'border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                    ? 'border-[#DB8585] bg-[#F7E4E4] text-[#C86565] animate-shake'
+                    : 'border-slate-200 focus:border-[#D4A373] focus:ring-2 focus:ring-[#F3E7D7]'
                   }
                   ${isVerifying ? 'opacity-50 cursor-not-allowed' : ''}
                   outline-none`}
@@ -168,7 +165,7 @@ export default function OTPVerificationModal({
 
           {/* Error Message */}
           {errorMessage && (
-            <div className="flex items-center gap-2 text-red-600 text-sm justify-center animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 text-[#C86565] text-sm justify-center animate-in fade-in slide-in-from-top-2">
               <XCircle size={16} />
               <span>{errorMessage}</span>
             </div>
@@ -177,11 +174,11 @@ export default function OTPVerificationModal({
 
         {/* Status Messages */}
         {verificationStatus === 'success' && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
-            <CheckCircle className="text-green-600" size={24} />
+          <div className="mb-6 p-4 bg-[#EDF2E8] border border-[#DDE5D6] rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle className="text-[#5C7251]" size={24} />
             <div>
-              <p className="text-green-800 font-semibold">Verified Successfully!</p>
-              <p className="text-green-600 text-sm">Order handed to delivery agent</p>
+              <p className="text-[#5C7251] font-semibold">Verified Successfully!</p>
+              <p className="text-[#5C7251] text-sm">Order handed to delivery agent</p>
             </div>
           </div>
         )}
@@ -192,8 +189,8 @@ export default function OTPVerificationModal({
           disabled={otp.join('').length !== 4 || isVerifying || verificationStatus === 'success'}
           className={`w-full py-3 rounded-xl font-semibold text-white transition-all
             ${otp.join('').length === 4 && verificationStatus !== 'success'
-              ? 'bg-blue-600 hover:bg-blue-700 active:scale-95'
-              : 'bg-gray-300 cursor-not-allowed'
+              ? 'bg-[#171719] hover:bg-[#2A2A2D] active:scale-95'
+              : 'bg-slate-300 cursor-not-allowed'
             }
             ${isVerifying ? 'opacity-75' : ''}
           `}
@@ -214,7 +211,7 @@ export default function OTPVerificationModal({
         </button>
 
         {/* Helper Text */}
-        <p className="text-center text-xs text-gray-500 mt-4">
+        <p className="text-center text-xs text-slate-500 mt-4">
           The delivery agent will provide the OTP when picking up the order
         </p>
       </div>

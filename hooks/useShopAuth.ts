@@ -2,21 +2,26 @@
 
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { makeFunctionReference } from "convex/server";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const getCurrentBrandStore = makeFunctionReference<"query">(
+  "brandStores:getCurrentBrandStore"
+);
 
 export function useShopAuth() {
   const { user, isLoaded: isClerkLoaded } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
-  const [showError, setShowError] = useState(false);
+  const [isErrorDismissed, setIsErrorDismissed] = useState(false);
   
   // Fetch brand store from Convex database
-  const brandStore = useQuery(api.brandStores.getCurrentBrandStore);
+  const brandStore = useQuery(getCurrentBrandStore);
 
   const isLoading = !isClerkLoaded || (user && brandStore === undefined);
   const isAuthorized = brandStore !== null && brandStore !== undefined;
+  const isRejected = !isLoading && Boolean(user) && brandStore === null;
 
   useEffect(() => {
     // Wait for everything to load
@@ -29,22 +34,23 @@ export function useShopAuth() {
     }
 
     // If user is signed in but doesn't exist in brandStores table with correct role
-    if (user && brandStore === null) {
-      setShowError(true);
+    if (isRejected) {
       // Sign out and redirect after a delay
-      setTimeout(async () => {
+      const timeoutId = window.setTimeout(async () => {
         await signOut();
         router.push("/sign-in");
       }, 3000);
+
+      return () => window.clearTimeout(timeoutId);
     }
-  }, [isLoading, user, brandStore, router, signOut]);
+  }, [isLoading, user, isRejected, router, signOut]);
 
   return {
     brandStore,
     isLoading,
     isAuthorized,
     clerkUser: user,
-    showError,
-    setShowError,
+    showError: isRejected && !isErrorDismissed,
+    setShowError: (isVisible: boolean) => setIsErrorDismissed(!isVisible),
   };
 }

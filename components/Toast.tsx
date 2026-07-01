@@ -20,9 +20,9 @@ export default function Toast({ message, type = "error", onClose, duration = 500
   }, [duration, onClose]);
 
   const bgColor = {
-    error: "bg-red-50 border-red-200 text-red-800",
-    success: "bg-green-50 border-green-200 text-green-800",
-    info: "bg-blue-50 border-blue-200 text-blue-800",
+    error: "bg-[#F7E4E4] border-[#F0D1D1] text-[#C86565]",
+    success: "bg-[#EDF2E8] border-[#DDE5D6] text-[#5C7251]",
+    info: "bg-[#F8EEE8] border-[#DDE5D6] text-[#5C7251]",
   }[type];
 
   return (
