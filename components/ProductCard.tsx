@@ -10,11 +10,20 @@ interface ProductCardProps {
   salePrice?: number | null;
   stock: number;
   sold: number;
+  categoryPath?: string;
 }
 
 const getImageUrl = makeFunctionReference<"query">("products:getImageUrl");
 
-function ProductCard({ name, image, price, salePrice, stock, sold }: ProductCardProps) {
+function ProductCard({
+  name,
+  image,
+  price,
+  salePrice,
+  stock,
+  sold,
+  categoryPath,
+}: ProductCardProps) {
   // Get image URL from Convex storage if it's a storage ID
   const imageUrl = useQuery(
     getImageUrl,
@@ -26,8 +35,8 @@ function ProductCard({ name, image, price, salePrice, stock, sold }: ProductCard
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <div className="relative aspect-[4/3] bg-slate-100">
-        <img 
-          src={displayImage} 
+        <img
+          src={displayImage}
           alt={name}
           className="w-full h-full object-cover"
         />
@@ -37,10 +46,15 @@ function ProductCard({ name, image, price, salePrice, stock, sold }: ProductCard
           </div>
         )}
       </div>
-      
+
       <div className="p-3.5">
         <h3 className="line-clamp-1 text-sm font-semibold text-[#171719]">{name}</h3>
-        
+        {categoryPath ? (
+          <p className="mt-1 line-clamp-1 text-[11px] font-medium text-slate-500">
+            {categoryPath}
+          </p>
+        ) : null}
+
         <div className="mt-2 flex items-center gap-2">
           {salePrice ? (
             <>
