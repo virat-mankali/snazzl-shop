@@ -9,10 +9,10 @@ export default function ShopAuthGuard({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying access...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#171719] mx-auto"></div>
+          <p className="mt-4 text-slate-500">Verifying access...</p>
         </div>
       </div>
     );
@@ -20,7 +20,7 @@ export default function ShopAuthGuard({ children }: { children: ReactNode }) {
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         {showError && (
           <Toast
             message="You are not eligible to access this interface. Only shop accounts are allowed."
@@ -29,7 +29,7 @@ export default function ShopAuthGuard({ children }: { children: ReactNode }) {
           />
         )}
         <div className="text-center">
-          <p className="text-gray-600">Redirecting...</p>
+          <p className="text-slate-500">Redirecting...</p>
         </div>
       </div>
     );
