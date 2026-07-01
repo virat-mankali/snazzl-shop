@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { X, Upload, Trash2, ChevronDown } from 'lucide-react';
 import { useMutation } from 'convex/react';
+import { makeFunctionReference } from 'convex/server';
 import Toast from './Toast';
 
 interface AddProductModalProps {
@@ -58,6 +59,25 @@ interface ImageUpload {
   preview: string;
   label: string;
 }
+
+const addProductMutation = makeFunctionReference<"mutation">(
+  "products:addProduct"
+);
+const generateUploadUrlMutation = makeFunctionReference<"mutation">(
+  "products:generateUploadUrl"
+);
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  return 'Failed to add product. Please try again.';
+};
 
 export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
   const [images, setImages] = useState<ImageUpload[]>([]);
@@ -136,8 +156,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     setImages(images.filter(img => img.id !== id));
   };
 
-  const addProduct = useMutation('products:addProduct' as any);
-  const generateUploadUrl = useMutation('products:generateUploadUrl' as any);
+  const addProduct = useMutation(addProductMutation);
+  const generateUploadUrl = useMutation(generateUploadUrlMutation);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper function to resize image to max 2MB
@@ -156,9 +176,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          let quality = 0.9;
+          const width = img.width;
+          const height = img.height;
+          const quality = 0.9;
           
           // Start with original dimensions, will reduce if needed
           canvas.width = width;
@@ -367,10 +387,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         onClose();
         setUploadProgress('');
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding product:', error);
-      const errorMessage = error?.message || error?.toString() || 'Failed to add product. Please try again.';
-      setToast({ message: errorMessage, type: 'error' });
+      setToast({ message: getErrorMessage(error), type: 'error' });
       setUploadProgress('');
     } finally {
       setIsSubmitting(false);
@@ -386,15 +405,15 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-50 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-slate-50 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+        <div className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X size={20} />
               </button>
@@ -404,7 +423,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               <button 
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#171719] text-white rounded-lg hover:bg-[#2A2A2D] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Publishing...' : 'Publish'}
               </button>
@@ -414,9 +433,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
           {uploadProgress && (
             <div className="mt-3 flex items-center gap-3">
               <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div className="bg-blue-600 h-full rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                <div className="bg-[#171719] h-full rounded-full animate-pulse" style={{ width: '100%' }}></div>
               </div>
-              <span className="text-sm text-gray-600 whitespace-nowrap">{uploadProgress}</span>
+              <span className="text-sm text-slate-500 whitespace-nowrap">{uploadProgress}</span>
             </div>
           )}
         </div>
@@ -426,12 +445,12 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
           <div className="grid grid-cols-3 gap-6">
             {/* Left Column - Image Upload */}
             <div className="bg-white rounded-xl p-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Upload Image</h3>
+              <h3 className="text-sm font-medium text-slate-700 mb-4">Upload Image</h3>
               
               {/* Cover Image Upload */}
               <div 
                 onClick={() => coverInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 mb-4 cursor-pointer hover:border-blue-500 transition-colors bg-gray-50"
+                className="border-2 border-dashed border-slate-200 rounded-lg p-8 mb-4 cursor-pointer hover:border-[#D4A373] transition-colors bg-slate-50"
               >
                 {coverImage.preview ? (
                   <div className="relative">
@@ -439,12 +458,12 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   </div>
                 ) : (
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                      <Upload className="text-blue-600" size={24} />
+                    <div className="w-16 h-16 bg-[#F8EEE8] rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <Upload className="text-[#171719]" size={24} />
                     </div>
-                    <p className="text-blue-600 font-medium mb-1">Upload Image</p>
-                    <p className="text-xs text-gray-500">Upload a cover image for your product.</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-[#171719] font-medium mb-1">Upload Image</p>
+                    <p className="text-xs text-slate-500">Upload a cover image for your product.</p>
+                    <p className="text-xs text-slate-400 mt-1">
                       File Format <span className="text-black">jpeg, png</span> Recommended Size{' '}
                       <span className="text-black">600x600 (1:1)</span>
                     </p>
@@ -462,14 +481,14 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               {/* Additional Images */}
               <div className="space-y-3">
                 {images.map((image) => (
-                  <div key={image.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                      <Upload className="text-blue-600" size={18} />
+                  <div key={image.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <div className="w-10 h-10 bg-[#F8EEE8] rounded flex items-center justify-center flex-shrink-0">
+                      <Upload className="text-[#171719]" size={18} />
                     </div>
                     <span className="text-sm text-black flex-1">{image.label}</span>
                     <button
                       onClick={() => removeImage(image.id)}
-                      className="text-gray-400 hover:text-red-600"
+                      className="text-slate-400 hover:text-[#C86565]"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -479,12 +498,12 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                 {images.length < 4 && (
                   <div
                     onClick={() => imageInputRef.current?.click()}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100"
                   >
-                    <div className="w-10 h-10 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                      <Upload className="text-blue-600" size={18} />
+                    <div className="w-10 h-10 bg-[#F8EEE8] rounded flex items-center justify-center flex-shrink-0">
+                      <Upload className="text-[#171719]" size={18} />
                     </div>
-                    <span className="text-sm text-gray-600 flex-1">
+                    <span className="text-sm text-slate-500 flex-1">
                       {imageLabels[images.length]}
                     </span>
                   </div>
@@ -510,7 +529,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="Slim Fit Denim Jeans"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                 />
               </div>
 
@@ -529,7 +548,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                           setColors(newColors);
                         }}
                         placeholder="Dark Blue"
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                        className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                       />
                       <input
                         type="color"
@@ -539,7 +558,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                           newColors[index].picker = e.target.value;
                           setColors(newColors);
                         }}
-                        className="w-12 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                        className="w-12 h-10 border border-slate-200 rounded-lg cursor-pointer"
                       />
                       <input
                         type="text"
@@ -550,12 +569,12 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                           setColors(newColors);
                         }}
                         placeholder="#00008B"
-                        className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                        className="w-28 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                       />
                       {colors.length > 1 && (
                         <button
                           onClick={() => setColors(colors.filter((_, i) => i !== index))}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-2 text-[#C86565] hover:bg-[#F7E4E4] rounded-lg"
                         >
                           <X size={18} />
                         </button>
@@ -564,7 +583,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   ))}
                   <button
                     onClick={() => setColors([...colors, { name: '', picker: '#000000' }])}
-                    className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium text-sm"
+                    className="flex items-center gap-2 px-4 py-2 text-[#171719] hover:bg-[#F8EEE8] rounded-lg font-medium text-sm"
                   >
                     <span className="text-lg">+</span>
                     <span>Add Color</span>
@@ -579,13 +598,13 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   <button
                     type="button"
                     onClick={() => setShowMainCategoryDropdown(!showMainCategoryDropdown)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black text-left flex items-center justify-between"
                   >
-                    <span className={mainCategory || 'text-gray-400'}>{mainCategory || 'Select category'}</span>
+                    <span className={mainCategory || 'text-slate-400'}>{mainCategory || 'Select category'}</span>
                     <ChevronDown size={18} />
                   </button>
                   {showMainCategoryDropdown && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {MAIN_CATEGORIES.map((cat) => (
                         <button
                           key={cat}
@@ -595,7 +614,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                             setSubCategory('');
                             setShowMainCategoryDropdown(false);
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                          className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
                         >
                           {cat}
                         </button>
@@ -609,13 +628,13 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     type="button"
                     onClick={() => setShowSubCategoryDropdown(!showSubCategoryDropdown)}
                     disabled={!mainCategory}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className={subCategory || 'text-gray-400'}>{subCategory || 'Select sub category'}</span>
+                    <span className={subCategory || 'text-slate-400'}>{subCategory || 'Select sub category'}</span>
                     <ChevronDown size={18} />
                   </button>
                   {showSubCategoryDropdown && mainCategory && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {SUB_CATEGORIES[mainCategory]?.map((subCat) => (
                         <button
                           key={subCat}
@@ -624,7 +643,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                             setSubCategory(subCat);
                             setShowSubCategoryDropdown(false);
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                          className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
                         >
                           {subCat}
                         </button>
@@ -641,13 +660,13 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   <button
                     type="button"
                     onClick={() => setShowFitDropdown(!showFitDropdown)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black text-left flex items-center justify-between"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black text-left flex items-center justify-between"
                   >
-                    <span className={fit || 'text-gray-400'}>{fit || 'Select fit'}</span>
+                    <span className={fit || 'text-slate-400'}>{fit || 'Select fit'}</span>
                     <ChevronDown size={18} />
                   </button>
                   {showFitDropdown && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {FITS.map((fitOption) => (
                         <button
                           key={fitOption}
@@ -656,7 +675,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                             setFit(fitOption);
                             setShowFitDropdown(false);
                           }}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-black"
+                          className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
                         >
                           {fitOption}
                         </button>
@@ -673,8 +692,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                         onClick={() => toggleSize(size)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           availableSizes.includes(size)
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-[#171719] text-white'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                       >
                         {size}
@@ -693,7 +712,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
                     placeholder="1999"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                   />
                 </div>
                 <div>
@@ -705,7 +724,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     placeholder="15"
                     min="0"
                     max="100"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -719,7 +738,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     value={material}
                     onChange={(e) => setMaterial(e.target.value)}
                     placeholder="Denim"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                   />
                 </div>
                 <div>
@@ -730,7 +749,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                     onChange={(e) => setStock(e.target.value)}
                     placeholder="100"
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -743,7 +762,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   onChange={(e) => setProductDescription(e.target.value)}
                   placeholder="Classic dark blue slim fit jeans made from stretchable denim fabric."
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-gray-400 resize-none"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black placeholder:text-slate-400 resize-none"
                 />
               </div>
             </div>
