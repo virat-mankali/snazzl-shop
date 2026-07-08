@@ -4,6 +4,11 @@ import { useState, useRef } from 'react';
 import { X, Upload, Trash2, ChevronDown } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { makeFunctionReference } from 'convex/server';
+import {
+  getProductCategory,
+  getProductCategorySection,
+  productCategories,
+} from '@/lib/productCategories';
 import Toast from './Toast';
 
 interface AddProductModalProps {
@@ -11,35 +16,6 @@ interface AddProductModalProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
-// Dropdown data from dropdown.md
-const MAIN_CATEGORIES = [
-  'Tops',
-  'Bottoms',
-  'Innerwear',
-  'Accessories',
-  'Activewear / Athleisure',
-  'Hoodies & Sweatshirts',
-  'Dresses',
-  'Footwear',
-  'Ethnic Wear',
-  'Basics',
-  'Beauty & Personal Care'
-];
-
-const SUB_CATEGORIES: Record<string, string[]> = {
-  'Tops': ['T-Shirts', 'Shirts', 'Crop Tops', 'Tank Tops', 'Blouses', 'Polo Tees', 'Tunics'],
-  'Bottoms': ['Jeans', 'Trousers', 'Shorts', 'Skirts', 'Joggers', 'Leggings', 'Cargo Pants'],
-  'Innerwear': ['Bras', 'Panties', 'Boxers', 'Briefs', 'Vests', 'Camisoles'],
-  'Accessories': ['Belts', 'Caps', 'Wallets', 'Watches', 'Bags', 'Sunglasses', 'Jewelry'],
-  'Activewear / Athleisure': ['Gym T-Shirts', 'Track Pants', 'Shorts', 'Sports Bras', 'Joggers', 'Sweatpants'],
-  'Hoodies & Sweatshirts': ['Zip-up Hoodies', 'Pullover Hoodies', 'Crew Neck Sweatshirts', 'Oversized Hoodies'],
-  'Dresses': ['Mini Dress', 'Maxi Dress', 'Bodycon Dress', 'A-line Dress', 'Shirt Dress'],
-  'Footwear': ['Sneakers', 'Sandals', 'Formal Shoes', 'Flip-Flops', 'Boots', 'Loafers'],
-  'Ethnic Wear': ['Kurta', 'Kurti', 'Sherwani', 'Saree', 'Lehenga', 'Dupatta'],
-  'Basics': ['Plain Tees', 'Everyday Shirts', 'Casual Pants', 'Shorts', 'Socks'],
-  'Beauty & Personal Care': ['Skincare', 'Haircare', 'Makeup', 'Fragrance', 'Bath & Body', 'Grooming Essentials']
-};
 
 const FITS = [
   'Slim Fit',
@@ -91,6 +67,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   ]);
   const [mainCategory, setMainCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
+  const [subSubCategory, setSubSubCategory] = useState('');
   const [fit, setFit] = useState('');
   const [availableSizes, setAvailableSizes] = useState<number[]>([]);
   const [basePrice, setBasePrice] = useState('');
@@ -101,6 +78,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showMainCategoryDropdown, setShowMainCategoryDropdown] = useState(false);
   const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
+  const [showSubSubCategoryDropdown, setShowSubSubCategoryDropdown] = useState(false);
   const [showFitDropdown, setShowFitDropdown] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   
@@ -115,6 +93,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   ];
 
   const commonSizes = [28, 30, 32, 34, 36, 38, 40, 42];
+  const selectedMainCategory = getProductCategory(mainCategory);
+  const selectedSubCategory = getProductCategorySection(mainCategory, subCategory);
 
   const toggleSize = (size: number) => {
     if (availableSizes.includes(size)) {
@@ -272,8 +252,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
       setToast({ message: 'Please enter at least one color', type: 'error' });
       return;
     }
-    if (!mainCategory.trim() || !subCategory.trim()) {
-      setToast({ message: 'Please select both main and sub category', type: 'error' });
+    if (!mainCategory.trim() || !subCategory.trim() || !subSubCategory.trim()) {
+      setToast({ message: 'Please select main, sub, and sub-sub category', type: 'error' });
       return;
     }
     if (!fit.trim()) {
@@ -344,7 +324,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         colors: colors.filter(c => c.name.trim()),
         category: {
           main_category: mainCategory,
-          sub_category: subCategory
+          sub_category: subCategory,
+          sub_sub_category: subSubCategory
         },
         size: {
           fit: fit,
@@ -371,6 +352,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
       setColors([{ name: '', picker: '#000000' }]);
       setMainCategory('');
       setSubCategory('');
+      setSubSubCategory('');
       setFit('');
       setAvailableSizes([]);
       setBasePrice('');
@@ -592,7 +574,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               </div>
 
               {/* Row 3 - Category */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <div className="relative">
                   <label className="block text-sm font-medium text-black mb-2">Main Category</label>
                   <button
@@ -605,18 +587,21 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   </button>
                   {showMainCategoryDropdown && (
                     <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {MAIN_CATEGORIES.map((cat) => (
+                      {productCategories.map((category) => (
                         <button
-                          key={cat}
+                          key={category.label}
                           type="button"
                           onClick={() => {
-                            setMainCategory(cat);
+                            setMainCategory(category.label);
                             setSubCategory('');
+                            setSubSubCategory('');
                             setShowMainCategoryDropdown(false);
+                            setShowSubCategoryDropdown(false);
+                            setShowSubSubCategoryDropdown(false);
                           }}
                           className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
                         >
-                          {cat}
+                          {category.label}
                         </button>
                       ))}
                     </div>
@@ -635,17 +620,48 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   </button>
                   {showSubCategoryDropdown && mainCategory && (
                     <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {SUB_CATEGORIES[mainCategory]?.map((subCat) => (
+                      {selectedMainCategory?.sections.map((section) => (
                         <button
-                          key={subCat}
+                          key={section.title}
                           type="button"
                           onClick={() => {
-                            setSubCategory(subCat);
+                            setSubCategory(section.title);
+                            setSubSubCategory('');
                             setShowSubCategoryDropdown(false);
+                            setShowSubSubCategoryDropdown(false);
                           }}
                           className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
                         >
-                          {subCat}
+                          {section.title}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <label className="block text-sm font-medium text-black mb-2">Sub-sub Category</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubSubCategoryDropdown(!showSubSubCategoryDropdown)}
+                    disabled={!subCategory}
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F3E7D7] text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className={subSubCategory || 'text-slate-400'}>{subSubCategory || 'Select sub-sub category'}</span>
+                    <ChevronDown size={18} />
+                  </button>
+                  {showSubSubCategoryDropdown && subCategory && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {selectedSubCategory?.items.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            setSubSubCategory(item);
+                            setShowSubSubCategoryDropdown(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-slate-100 text-black"
+                        >
+                          {item}
                         </button>
                       ))}
                     </div>
