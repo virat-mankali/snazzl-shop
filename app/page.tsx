@@ -174,6 +174,7 @@ export default function Dashboard() {
                     tickFormatter={(value) => `${value / 1000}K`}
                   />
                   <Tooltip 
+                    separator=""
                     contentStyle={{ 
                       backgroundColor: '#B76743',
                       border: 'none',
@@ -182,6 +183,7 @@ export default function Dashboard() {
                       fontSize: '12px',
                       padding: '4px 8px'
                     }}
+                    itemStyle={{ color: 'white' }}
                     formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
                     labelFormatter={() => ''}
                   />
