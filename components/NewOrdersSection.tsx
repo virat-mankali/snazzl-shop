@@ -28,14 +28,16 @@ interface ConvexOrder {
   paymentMethod: string;
 }
 
-const getAllOrders = makeFunctionReference<"query">("orders:getAllOrders");
+const getMyShopOrders = makeFunctionReference<"query">(
+  "orders:getMyShopOrders"
+);
 const updateOrderStatusMutation = makeFunctionReference<"mutation">(
   "orders:updateOrderStatus"
 );
 
 export default function NewOrdersSection() {
   // Fetch orders from Convex
-  const queriedConvexOrders = useQuery(getAllOrders) as
+  const queriedConvexOrders = useQuery(getMyShopOrders) as
     | ConvexOrder[]
     | undefined;
   const convexOrders = useMemo(

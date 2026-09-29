@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import OrderCard, { Order, OrderStatus } from '@/components/OrderCard';
 import ShopAuthGuard from '@/components/ShopAuthGuard';
@@ -31,10 +31,6 @@ type ConvexOrderRecord = {
   orderStatus: string;
   amount: number;
   items: ConvexOrderItem[];
-  otp?: {
-    shop?: string;
-    customer?: string;
-  };
 };
 
 type VerifyResult = {
@@ -42,7 +38,7 @@ type VerifyResult = {
   message: string;
 };
 
-const getAllOrders = makeFunctionReference<"query">("orders:getAllOrders");
+const getMyShopOrders = makeFunctionReference<"query">("orders:getMyShopOrders");
 const updateOrderStatusMutation = makeFunctionReference<"mutation">(
   "orders:updateOrderStatus"
 );
@@ -56,26 +52,13 @@ export default function OrdersPage() {
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
 
-  // Fetch orders from Convex using string-based function name
-  const queriedConvexOrders = useQuery(getAllOrders) as
+  const queriedConvexOrders = useQuery(getMyShopOrders) as
     | ConvexOrderRecord[]
     | undefined;
   const convexOrders = useMemo(
     () => queriedConvexOrders ?? [],
     [queriedConvexOrders]
   );
-  
-  // Debug: Log orders to see OTP structure
-  React.useEffect(() => {
-    if (convexOrders.length > 0) {
-      console.log('Sample order with OTP:', {
-        orderId: convexOrders[0].orderId,
-        shopOTP: convexOrders[0].otp?.shop,
-        customerOTP: convexOrders[0].otp?.customer,
-        status: convexOrders[0].orderStatus,
-      });
-    }
-  }, [convexOrders]);
 
   // Map Convex status to display status
   const getDisplayStatus = (status: string): OrderStatus => {
@@ -197,12 +180,10 @@ export default function OrdersPage() {
 
   const handleVerifyOTP = async (otp: string) => {
     try {
-      console.log('Verifying OTP:', { orderId: selectedOrderId, otp });
       const result = (await verifyShopOTP({
         orderId: selectedOrderId,
         otp,
       })) as VerifyResult;
-      console.log('Verification result:', result);
       return result;
     } catch (error) {
       console.error('Failed to verify OTP:', error);

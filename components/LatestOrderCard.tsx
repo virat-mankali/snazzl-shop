@@ -25,7 +25,9 @@ interface LatestOrder {
   orderStatus: string;
 }
 
-const getAllOrders = makeFunctionReference<"query">("orders:getAllOrders");
+const getMyShopOrders = makeFunctionReference<"query">(
+  "orders:getMyShopOrders"
+);
 
 export default function LatestOrderCard() {
   const [latestOrder, setLatestOrder] = useState<LatestOrder | null>(null);
@@ -37,7 +39,7 @@ export default function LatestOrderCard() {
   const fetchLatestOrder = useCallback(async () => {
     try {
       // Use convex.query to fetch data once (non-reactive)
-      const orders = (await convex.query(getAllOrders, {})) as
+      const orders = (await convex.query(getMyShopOrders, {})) as
         | LatestOrder[]
         | undefined;
       if (orders && orders.length > 0) {

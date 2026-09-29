@@ -1,44 +1,35 @@
 "use client";
 
 import { useUser, useClerk } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { makeFunctionReference } from "convex/server";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const getCurrentBrandStore = makeFunctionReference<"query">(
-  "brandStores:getCurrentBrandStore"
-);
+export const SHOP_ROLE = "shop";
 
 export function useShopAuth() {
   const { user, isLoaded: isClerkLoaded } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const [isErrorDismissed, setIsErrorDismissed] = useState(false);
-  
-  // Fetch brand store from Convex database
-  const brandStore = useQuery(getCurrentBrandStore);
 
-  const isLoading = !isClerkLoaded || (user && brandStore === undefined);
-  const isAuthorized = brandStore !== null && brandStore !== undefined;
-  const isRejected = !isLoading && Boolean(user) && brandStore === null;
+  const role = user?.publicMetadata?.role;
+  const normalizedRole = typeof role === "string" ? role.trim().toLowerCase() : role;
+  const isLoading = !isClerkLoaded;
+  const isAuthorized = Boolean(user) && normalizedRole === SHOP_ROLE;
+  const isRejected = !isLoading && Boolean(user) && !isAuthorized;
 
   useEffect(() => {
-    // Wait for everything to load
     if (isLoading) return;
 
-    // If not signed in with Clerk, redirect to sign-in
     if (!user) {
-      router.push("/sign-in");
+      router.replace("/sign-in");
       return;
     }
 
-    // If user is signed in but doesn't exist in brandStores table with correct role
     if (isRejected) {
-      // Sign out and redirect after a delay
       const timeoutId = window.setTimeout(async () => {
         await signOut();
-        router.push("/sign-in");
+        router.replace("/sign-in");
       }, 3000);
 
       return () => window.clearTimeout(timeoutId);
@@ -46,7 +37,6 @@ export function useShopAuth() {
   }, [isLoading, user, isRejected, router, signOut]);
 
   return {
-    brandStore,
     isLoading,
     isAuthorized,
     clerkUser: user,
