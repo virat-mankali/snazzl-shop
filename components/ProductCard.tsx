@@ -1,6 +1,4 @@
 import { memo } from 'react';
-import { useQuery } from 'convex/react';
-import { makeFunctionReference } from 'convex/server';
 
 interface ProductCardProps {
   id: string;
@@ -13,8 +11,6 @@ interface ProductCardProps {
   categoryPath?: string;
 }
 
-const getImageUrl = makeFunctionReference<"query">("products:getImageUrl");
-
 function ProductCard({
   name,
   image,
@@ -24,19 +20,11 @@ function ProductCard({
   sold,
   categoryPath,
 }: ProductCardProps) {
-  // Get image URL from Convex storage if it's a storage ID
-  const imageUrl = useQuery(
-    getImageUrl,
-    image && !image.startsWith('http') ? { storageId: image } : 'skip'
-  ) as string | null | undefined;
-
-  const displayImage = imageUrl || image;
-
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <div className="relative aspect-[4/3] bg-slate-100">
         <img
-          src={displayImage}
+          src={image}
           alt={name}
           className="w-full h-full object-cover"
         />

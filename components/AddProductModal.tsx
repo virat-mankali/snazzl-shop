@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { X, Upload, Trash2, ChevronDown } from 'lucide-react';
-import { useMutation } from 'convex/react';
+import { useAction, useMutation } from 'convex/react';
 import { makeFunctionReference } from 'convex/server';
 import {
   getProductCategory,
@@ -39,9 +39,8 @@ interface ImageUpload {
 const addProductMutation = makeFunctionReference<"mutation">(
   "products:addProduct"
 );
-const generateUploadUrlMutation = makeFunctionReference<"mutation">(
-  "products:generateUploadUrl"
-);
+const createProductUploadMutation = makeFunctionReference<"mutation">("media:createProductUpload");
+const finishProductUploadAction = makeFunctionReference<"action">("media:finishProductUpload");
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -137,7 +136,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   };
 
   const addProduct = useMutation(addProductMutation);
-  const generateUploadUrl = useMutation(generateUploadUrlMutation);
+  const createProductUpload = useMutation(createProductUploadMutation);
+  const finishProductUpload = useAction(finishProductUploadAction);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper function to resize image to max 2MB
@@ -208,38 +208,17 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     });
   };
 
-  // Upload image to Convex storage
+  // Publish only after the backend verifies the staged image and its owner.
   const uploadImage = async (file: File): Promise<string> => {
-    try {
-      // Resize the image first
-      console.log('Resizing image:', file.name);
-      const resizedBlob = await resizeImage(file);
-      console.log('Image resized, size:', resizedBlob.size);
-      
-      // Get upload URL from Convex
-      console.log('Getting upload URL...');
-      const uploadUrl = await generateUploadUrl();
-      console.log('Upload URL received:', uploadUrl);
-      
-      // Upload the resized image
-      console.log('Uploading to storage...');
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': resizedBlob.type },
-        body: resizedBlob,
-      });
-      
-      if (!result.ok) {
-        throw new Error(`Upload failed: ${result.statusText}`);
-      }
-      
-      const { storageId } = await result.json();
-      console.log('Storage ID received:', storageId);
-      return storageId;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
+    const resizedBlob = await resizeImage(file);
+    const { uploadId, uploadUrl } = await createProductUpload({ contentType: resizedBlob.type, size: resizedBlob.size });
+    const result = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': resizedBlob.type },
+      body: resizedBlob,
+    });
+    if (!result.ok) throw new Error('Image upload failed. Please try again.');
+    return await finishProductUpload({ uploadId });
   };
 
   const handleSubmit = async () => {
