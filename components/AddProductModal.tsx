@@ -205,7 +205,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     });
   };
 
-  // Publish only after the backend verifies the staged image and its owner.
+  // Upload directly to products; verify the image and owner before attaching it.
   const uploadImage = async (file: File): Promise<string> => {
     const resizedBlob = await resizeImage(file);
     const { uploadId, uploadUrl } = await createProductUpload({ contentType: resizedBlob.type, size: resizedBlob.size });

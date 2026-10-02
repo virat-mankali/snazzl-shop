@@ -20,8 +20,10 @@ The customer and driver production-preview apps, admin, and shop must use the sa
 
 ## Product media
 
-The shop uses `media:createProductUpload` and `media:finishProductUpload` in Convex. Both APIs were confirmed deployed in production on 2026-10-02. Uploads are staged in the private R2 bucket, then validated and published to the public product bucket.
+The shop uses `media:createProductUpload` and `media:finishProductUpload` in Convex. Deploy the updated Convex backend to enable direct product uploads: the browser PUTs the image into `snazzl-products`, then Convex verifies ownership, type and size using only the first 12 bytes. New uploads do not use private staging or a second copy. Old pending staged uploads remain supported during rollout.
 
-The private bucket CORS configuration must allow the actual shop dashboard browser origin, `PUT`, and the `Content-Type` header. A successful CDN image read does not test upload CORS. Public product images use the backend's `R2_PUBLIC_BASE_URL` (`https://media.snazzl.shop`); no R2 credentials belong in this website.
+In `snazzl-products` → Settings → CORS Policy, allow `https://partner.snazzl.shop`, method `PUT`, and headers `Content-Type` and `Content-Length`. Keep existing rules. No new environment keys or frontend rebuild are required for the upload destination change; retry uploads after deploying Convex to get new signed URLs.
+
+Product images are publicly readable through Bunny using `R2_PUBLIC_BASE_URL` (`https://media.snazzl.shop`). Only uploads need signatures. Files become publicly readable when uploaded, so only public product media belongs here. Try-ons remain in the private bucket. No R2 credentials belong in this website.
 
 The unused `NEXT_PUBLIC_OPENAI_API_KEY` entry was removed from `.env.local`. AI provider credentials belong in Convex.
