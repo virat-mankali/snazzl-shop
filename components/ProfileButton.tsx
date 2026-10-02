@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { Settings } from "lucide-react";
 
 export default function ProfileButton() {
-  const { signOut } = useClerk();
+  const { signOut, openUserProfile } = useClerk();
   const { isLoaded, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -53,9 +53,9 @@ export default function ProfileButton() {
               {user.emailAddresses[0]?.emailAddress}
             </p>
           </div>
-          <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
+          <button onClick={() => { setIsOpen(false); openUserProfile(); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
             <Settings size={16} />
-            <span>Settings</span>
+            <span>Account &amp; password</span>
           </button>
           <button
             onClick={handleLogout}

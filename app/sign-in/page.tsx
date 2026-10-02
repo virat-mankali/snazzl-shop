@@ -69,6 +69,8 @@ export default function SignInPage() {
         } catch {
           await signOut({ redirectUrl: "/sign-in" });
         }
+      } else {
+        setError("Additional verification is required. Contact your administrator to check your sign-in settings.");
       }
     } catch (err: unknown) {
       const clerkError = getFirstClerkError(err);
@@ -83,6 +85,7 @@ export default function SignInPage() {
       }
 
       setError(message);
+    } finally {
       setLoading(false);
     }
   };
