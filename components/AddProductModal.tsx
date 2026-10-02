@@ -75,9 +75,6 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   const [productDescription, setProductDescription] = useState('');
   const [stock, setStock] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [showMainCategoryDropdown, setShowMainCategoryDropdown] = useState(false);
-  const [showSubCategoryDropdown, setShowSubCategoryDropdown] = useState(false);
-  const [showSubSubCategoryDropdown, setShowSubSubCategoryDropdown] = useState(false);
   const [showFitDropdown, setShowFitDropdown] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   
@@ -553,99 +550,70 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               </div>
 
               {/* Row 3 - Category */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <div className="relative">
-                  <label className="block text-sm font-medium text-black mb-2">Main Category</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowMainCategoryDropdown(!showMainCategoryDropdown)}
-                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4D4D4] text-black text-left flex items-center justify-between"
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div>
+                  <label htmlFor="main-category" className="block text-sm font-medium text-black mb-2">Main Category</label>
+                  <select
+                    id="main-category"
+                    value={mainCategory}
+                    onChange={(event) => {
+                      setMainCategory(event.target.value);
+                      setSubCategory('');
+                      setSubSubCategory('');
+                    }}
+                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg bg-white text-black focus:outline-none focus:ring-2 focus:ring-neutral-300"
                   >
-                    <span className={mainCategory || 'text-neutral-400'}>{mainCategory || 'Select category'}</span>
-                    <ChevronDown size={18} />
-                  </button>
-                  {showMainCategoryDropdown && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {productCategories.map((category) => (
-                        <button
-                          key={category.label}
-                          type="button"
-                          onClick={() => {
-                            setMainCategory(category.label);
-                            setSubCategory('');
-                            setSubSubCategory('');
-                            setShowMainCategoryDropdown(false);
-                            setShowSubCategoryDropdown(false);
-                            setShowSubSubCategoryDropdown(false);
-                          }}
-                          className="w-full px-4 py-2 text-left hover:bg-neutral-100 text-black"
-                        >
-                          {category.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                    <option value="">Select category</option>
+                    {productCategories.map((category) => (
+                      <option key={category.label} value={category.label}>{category.label}</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="relative">
-                  <label className="block text-sm font-medium text-black mb-2">Sub Category</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowSubCategoryDropdown(!showSubCategoryDropdown)}
+                <div>
+                  <label htmlFor="sub-category" className="block text-sm font-medium text-black mb-2">Sub Category</label>
+                  <select
+                    id="sub-category"
+                    value={subCategory}
                     disabled={!mainCategory}
-                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4D4D4] text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                    onChange={(event) => {
+                      setSubCategory(event.target.value);
+                      setSubSubCategory('');
+                    }}
+                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg bg-white text-black focus:outline-none focus:ring-2 focus:ring-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className={subCategory || 'text-neutral-400'}>{subCategory || 'Select sub category'}</span>
-                    <ChevronDown size={18} />
-                  </button>
-                  {showSubCategoryDropdown && mainCategory && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {selectedMainCategory?.sections.map((section) => (
-                        <button
-                          key={section.title}
-                          type="button"
-                          onClick={() => {
-                            setSubCategory(section.title);
-                            setSubSubCategory('');
-                            setShowSubCategoryDropdown(false);
-                            setShowSubSubCategoryDropdown(false);
-                          }}
-                          className="w-full px-4 py-2 text-left hover:bg-neutral-100 text-black"
-                        >
-                          {section.title}
-                        </button>
+                    <option value="">Select sub category</option>
+                    {selectedMainCategory?.sections.map((section) => (
+                      <option key={section.title} value={section.title}>{section.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <fieldset className="min-w-0 lg:col-span-2">
+                  <legend className="text-sm font-medium text-black mb-2">
+                    Product type (sub-sub category)
+                    {selectedSubCategory && <span className="ml-2 font-normal text-neutral-500">{selectedSubCategory.items.length} options</span>}
+                  </legend>
+                  {selectedSubCategory ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSubCategory.items.map((item) => (
+                        <label key={item} className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name="product-type"
+                            value={item}
+                            checked={subSubCategory === item}
+                            onChange={() => setSubSubCategory(item)}
+                            className="peer sr-only"
+                          />
+                          <span className="block rounded-lg border border-neutral-200 px-4 py-2 text-sm text-black transition hover:border-neutral-400 peer-checked:border-black peer-checked:bg-black peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-black">
+                            {item}
+                          </span>
+                        </label>
                       ))}
                     </div>
+                  ) : (
+                    <p className="text-sm text-neutral-500">Select a main category and sub category to see all product types.</p>
                   )}
-                </div>
-                <div className="relative">
-                  <label className="block text-sm font-medium text-black mb-2">Sub-sub Category</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowSubSubCategoryDropdown(!showSubSubCategoryDropdown)}
-                    disabled={!subCategory}
-                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4D4D4] text-black text-left flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className={subSubCategory || 'text-neutral-400'}>{subSubCategory || 'Select sub-sub category'}</span>
-                    <ChevronDown size={18} />
-                  </button>
-                  {showSubSubCategoryDropdown && subCategory && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {selectedSubCategory?.items.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => {
-                            setSubSubCategory(item);
-                            setShowSubSubCategoryDropdown(false);
-                          }}
-                          className="w-full px-4 py-2 text-left hover:bg-neutral-100 text-black"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                </fieldset>
               </div>
 
               {/* Row 4 - Size */}
