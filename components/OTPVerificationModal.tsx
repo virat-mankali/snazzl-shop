@@ -113,7 +113,7 @@ export default function OTPVerificationModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-500 transition-colors"
+          className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-500 transition-colors"
           disabled={isVerifying}
         >
           <X size={24} />
@@ -121,14 +121,14 @@ export default function OTPVerificationModal({
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#F8EEE8] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[#F5F5F5] rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">🔐</span>
           </div>
-          <h2 className="text-2xl font-bold text-[#171719] mb-2">Verify OTP</h2>
-          <p className="text-slate-500 text-sm">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">Verify OTP</h2>
+          <p className="text-neutral-500 text-sm">
             Enter the 4-digit OTP provided by the delivery agent
           </p>
-          <p className="text-slate-500 text-xs mt-2">
+          <p className="text-neutral-500 text-xs mt-2">
             Order ID: <span className="font-mono font-semibold">{orderId}</span>
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function OTPVerificationModal({
                     ? 'border-[#A3B18A] bg-[#EDF2E8] text-[#5C7251]'
                     : verificationStatus === 'error'
                     ? 'border-[#DB8585] bg-[#F7E4E4] text-[#C86565] animate-shake'
-                    : 'border-slate-200 focus:border-[#D4A373] focus:ring-2 focus:ring-[#F3E7D7]'
+                    : 'border-neutral-200 focus:border-[#171717] focus:ring-2 focus:ring-[#D4D4D4]'
                   }
                   ${isVerifying ? 'opacity-50 cursor-not-allowed' : ''}
                   outline-none`}
@@ -189,8 +189,8 @@ export default function OTPVerificationModal({
           disabled={otp.join('').length !== 4 || isVerifying || verificationStatus === 'success'}
           className={`w-full py-3 rounded-xl font-semibold text-white transition-all
             ${otp.join('').length === 4 && verificationStatus !== 'success'
-              ? 'bg-[#171719] hover:bg-[#2A2A2D] active:scale-95'
-              : 'bg-slate-300 cursor-not-allowed'
+              ? 'bg-[#171717] hover:bg-[#404040] active:scale-95'
+              : 'bg-neutral-300 cursor-not-allowed'
             }
             ${isVerifying ? 'opacity-75' : ''}
           `}
@@ -211,7 +211,7 @@ export default function OTPVerificationModal({
         </button>
 
         {/* Helper Text */}
-        <p className="text-center text-xs text-slate-500 mt-4">
+        <p className="text-center text-xs text-neutral-500 mt-4">
           The delivery agent will provide the OTP when picking up the order
         </p>
       </div>

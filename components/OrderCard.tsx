@@ -54,23 +54,23 @@ export default function OrderCard({
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'New Order':
-        return 'bg-[#F8EEE8] text-[#8A5D46] ring-1 ring-[#ECD9C9]';
+        return 'bg-[#F5F5F5] text-[#404040] ring-1 ring-[#E5E5E5]';
       case 'Started':
-        return 'bg-[#F8EEE8] text-[#8A5D46] ring-1 ring-[#ECD9C9]';
+        return 'bg-[#F5F5F5] text-[#404040] ring-1 ring-[#E5E5E5]';
       case 'Accepted':
         return 'bg-[#EDF2E8] text-[#5C7251] ring-1 ring-[#DDE5D6]';
       case 'Rejected':
         return 'bg-[#F7E4E4] text-[#C86565] ring-1 ring-[#F0D1D1]';
       case 'Assigned':
-        return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200';
+        return 'bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200';
       case 'Picked':
         return 'bg-[#EDF2E8] text-[#5C7251] ring-1 ring-[#DDE5D6]';
       case 'Delivering':
-        return 'bg-[#F8EEE8] text-[#8A5D46] ring-1 ring-[#ECD9C9]';
+        return 'bg-[#F5F5F5] text-[#404040] ring-1 ring-[#E5E5E5]';
       case 'Delivered':
-        return 'bg-slate-100 text-slate-600 ring-1 ring-slate-200';
+        return 'bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200';
       default:
-        return 'bg-slate-100 text-slate-600 ring-1 ring-slate-200';
+        return 'bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200';
     }
   };
 
@@ -87,7 +87,7 @@ export default function OrderCard({
             </button>
             <button
               onClick={() => onAccept?.(order.orderId)}
-              className="rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               Accept Order
             </button>
@@ -98,7 +98,7 @@ export default function OrderCard({
           <div className="flex gap-2">
             <button
               onClick={() => onHandToAgent?.(order.orderId)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <Handshake size={15} />
               Hand to Delivery Agent
@@ -110,13 +110,13 @@ export default function OrderCard({
           <div className="flex gap-2">
             <button
               onClick={() => onCancelOrder?.(order.orderId)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50"
             >
               Cancel Order
             </button>
             <button
               onClick={() => onPrintLabel?.(order.orderId)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <FileText size={15} />
               Print Label
@@ -126,7 +126,7 @@ export default function OrderCard({
       case 'Rejected':
         return (
           <div className="flex gap-2">
-            <span className="text-sm text-slate-500 px-3 py-1.5">Order Rejected</span>
+            <span className="text-sm text-neutral-500 px-3 py-1.5">Order Rejected</span>
           </div>
         );
       case 'Assigned':
@@ -134,7 +134,7 @@ export default function OrderCard({
           <div className="flex gap-2">
             <button
               onClick={() => onPrintLabel?.(order.orderId)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <FileText size={15} />
               Print Label
@@ -144,7 +144,7 @@ export default function OrderCard({
       case 'Picked':
         return (
           <div className="flex gap-2">
-            <span className="text-sm text-slate-500 px-3 py-1.5">Order picked by delivery agent</span>
+            <span className="text-sm text-neutral-500 px-3 py-1.5">Order picked by delivery agent</span>
           </div>
         );
       case 'Delivering':
@@ -152,13 +152,13 @@ export default function OrderCard({
           <div className="flex gap-2">
             <button
               onClick={() => onCancelOrder?.(order.orderId)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50"
             >
               Cancel Order
             </button>
             <button
               onClick={() => onPrintLabel?.(order.orderId)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <FileText size={15} />
               Print Label
@@ -170,13 +170,13 @@ export default function OrderCard({
           <div className="flex gap-2">
             <button
               onClick={() => onCancelOrder?.(order.orderId)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50"
             >
               Cancel Order
             </button>
             <button
               onClick={() => onInvoice?.(order.orderId)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#171719] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-1.5 rounded-lg bg-[#171717] px-3 py-1.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <ReceiptText size={15} />
               Invoice
@@ -189,22 +189,22 @@ export default function OrderCard({
   };
 
   return (
-    <div className="mb-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300">
+    <div className="mb-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition hover:border-neutral-300">
       {/* Order Header */}
-      <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+      <div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-3">
         <div className="flex items-center gap-6 text-sm">
           <div>
-            <span className="text-slate-500">Customer: </span>
-            <span className="font-semibold text-[#171719]">{order.customerName}</span>
+            <span className="text-neutral-500">Customer: </span>
+            <span className="font-semibold text-[#171717]">{order.customerName}</span>
           </div>
           <div>
-            <span className="text-slate-500">Date of Order </span>
-            <span className="font-medium text-slate-700">{order.orderDate}</span>
+            <span className="text-neutral-500">Date of Order </span>
+            <span className="font-medium text-neutral-700">{order.orderDate}</span>
           </div>
         </div>
         <div>
-          <span className="text-sm text-slate-500">Order ID: </span>
-          <span className="font-semibold text-[#171719]">{order.orderId}</span>
+          <span className="text-sm text-neutral-500">Order ID: </span>
+          <span className="font-semibold text-[#171717]">{order.orderId}</span>
         </div>
       </div>
 
@@ -215,30 +215,30 @@ export default function OrderCard({
             <img
               src={product.image}
               alt={product.name}
-              className="h-14 w-14 rounded-lg bg-slate-100 object-cover"
+              className="h-14 w-14 rounded-lg bg-neutral-100 object-cover"
             />
             <div className="flex-1 grid grid-cols-5 gap-4">
               <div>
-                <div className="font-semibold text-[#171719]">{product.name}</div>
-                <div className="text-sm text-slate-500">
+                <div className="font-semibold text-[#171717]">{product.name}</div>
+                <div className="text-sm text-neutral-500">
                   Color: {product.color} Size: {product.size}
                 </div>
-                <div className="text-sm text-slate-500">Quantity: {product.quantity}</div>
+                <div className="text-sm text-neutral-500">Quantity: {product.quantity}</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-[#171719]">
+                <div className="font-semibold text-[#171717]">
                   {index === 0 ? `₹${order.amount.toFixed(2)}` : '-'}
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-slate-500">{index === 0 ? order.paymentMethod : '-'}</div>
+                <div className="text-sm text-neutral-500">{index === 0 ? order.paymentMethod : '-'}</div>
               </div>
               <div className="text-center">
                 <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}>
                   {order.status}
                 </span>
                 {order.deliveryNote && (
-                  <div className="text-xs text-slate-500 mt-1">{order.deliveryNote}</div>
+                  <div className="text-xs text-neutral-500 mt-1">{order.deliveryNote}</div>
                 )}
               </div>
               <div className="flex justify-end">
@@ -253,7 +253,7 @@ export default function OrderCard({
       {hasMoreProducts && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="flex items-center gap-1 text-sm text-slate-500 hover:text-black mt-3 font-medium"
+          className="flex items-center gap-1 text-sm text-neutral-500 hover:text-black mt-3 font-medium"
         >
           {showAll ? (
             <>

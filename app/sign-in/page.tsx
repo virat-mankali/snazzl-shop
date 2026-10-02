@@ -91,7 +91,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div className="flex flex-col items-center">
           <Image
@@ -101,10 +101,10 @@ export default function SignInPage() {
             height={80}
             className="mb-4"
           />
-          <h2 className="text-center text-3xl font-bold text-[#171719]">
+          <h2 className="text-center text-3xl font-bold text-[#171717]">
             Snazzl Shop
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-neutral-500">
             Sign in to your account
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function SignInPage() {
           )}
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
                 Email address
               </label>
               <input
@@ -127,11 +127,11 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-md shadow-sm text-[#171719] focus:outline-none focus:ring-[#F3E7D7] focus:border-[#D4A373]"
+                className="mt-1 block w-full px-3 py-2 border border-neutral-200 rounded-md shadow-sm text-[#171717] focus:outline-none focus:ring-[#D4D4D4] focus:border-[#171717]"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="block text-sm font-medium text-neutral-700">
                 Password
               </label>
               <input
@@ -142,7 +142,7 @@ export default function SignInPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-slate-200 rounded-md shadow-sm text-[#171719] focus:outline-none focus:ring-[#F3E7D7] focus:border-[#D4A373]"
+                className="mt-1 block w-full px-3 py-2 border border-neutral-200 rounded-md shadow-sm text-[#171717] focus:outline-none focus:ring-[#D4D4D4] focus:border-[#171717]"
               />
             </div>
           </div>
@@ -150,12 +150,12 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#171719] hover:bg-[#2A2A2D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F3E7D7] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#171717] hover:bg-[#404040] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#D4D4D4] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <p className="text-center text-xs text-slate-500 mt-4">
+        <p className="text-center text-xs text-neutral-500 mt-4">
           Contact your administrator for access credentials
         </p>
       </div>

@@ -75,21 +75,21 @@ export default function ProductsPage() {
 
   return (
     <ShopAuthGuard>
-    <div className="flex min-h-screen bg-[#F1F1F1]">
+    <div className="flex min-h-screen bg-[#FAFAFA]">
       <ShopSidebar activeItem="products" />
       <div className="min-w-0 flex-1">
       <ShopTopbar title="Products" description="Manage inventory, pricing and availability.">
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
           <input
             type="text"
             placeholder="Search products"
-            className="h-9 w-64 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#D4A373] focus:bg-white focus:ring-3 focus:ring-[#F3E7D7]"
+            className="h-9 w-64 rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#171717] focus:bg-white focus:ring-3 focus:ring-[#D4D4D4]"
           />
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex h-9 items-center gap-2 rounded-lg bg-[#171719] px-4 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+          className="flex h-9 items-center gap-2 rounded-lg bg-[#171717] px-4 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
         >
           <Plus size={16} />
           <span>Add</span>
@@ -99,7 +99,7 @@ export default function ProductsPage() {
       {/* Main Content */}
       <main className="p-6">
         {/* Filters */}
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-2 shadow-sm">
           <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
             {categories.map((category) => (
               <button
@@ -107,8 +107,8 @@ export default function ProductsPage() {
                 onClick={() => setSelectedCategory(category)}
                 className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   selectedCategory === category
-                    ? 'bg-[#171719] text-white'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-[#171719]'
+                    ? 'bg-[#171717] text-white'
+                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-[#171717]'
                 }`}
               >
                 {category}
@@ -117,24 +117,24 @@ export default function ProductsPage() {
           </div>
 
           <div className="ml-3 flex shrink-0 items-center gap-2">
-            <button className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            <button className="flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50">
               <span className="text-sm">Out Of Stock</span>
             </button>
             
             <div className="relative">
               <button 
                 onClick={() => setShowTimeFilter(!showTimeFilter)}
-                className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="flex h-9 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
               >
                 <Calendar size={16} />
                 <span className="text-sm">{selectedTimeFilter}</span>
               </button>
 
               {showTimeFilter && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-10">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-neutral-200 p-4 z-10">
                   <div className="flex items-center justify-between mb-4">
                     <span className="font-medium text-black">Select Time Period</span>
-                    <button onClick={() => setShowTimeFilter(false)} className="text-slate-500 hover:text-black">
+                    <button onClick={() => setShowTimeFilter(false)} className="text-neutral-500 hover:text-black">
                       <X size={18} />
                     </button>
                   </div>
@@ -146,9 +146,9 @@ export default function ProductsPage() {
                           type="radio"
                           name="timeFilter"
                           value={filter.value}
-                          className="w-4 h-4 text-[#171719]"
+                          className="w-4 h-4 text-[#171717]"
                         />
-                        <span className="text-sm text-slate-700">{filter.label}</span>
+                        <span className="text-sm text-neutral-700">{filter.label}</span>
                       </label>
                     ))}
                   </div>
@@ -156,7 +156,7 @@ export default function ProductsPage() {
                   <div className="flex gap-2 pt-3 border-t">
                     <button 
                       onClick={() => setShowTimeFilter(false)}
-                      className="flex-1 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-black text-sm"
+                      className="flex-1 px-4 py-2 border border-neutral-200 rounded-lg hover:bg-neutral-50 text-black text-sm"
                     >
                       Reset
                     </button>
@@ -165,7 +165,7 @@ export default function ProductsPage() {
                         setSelectedTimeFilter('Past 14 days');
                         setShowTimeFilter(false);
                       }}
-                      className="flex-1 px-4 py-2 bg-[#171719] text-white rounded-lg hover:bg-[#2A2A2D] text-sm"
+                      className="flex-1 px-4 py-2 bg-[#171717] text-white rounded-lg hover:bg-[#404040] text-sm"
                     >
                       Show Result
                     </button>
@@ -178,19 +178,19 @@ export default function ProductsPage() {
 
         {/* Products Grid */}
         {visibleProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white py-20 shadow-sm">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100">
-              <Package size={28} className="text-slate-500" />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white py-20 shadow-sm">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-neutral-100">
+              <Package size={28} className="text-neutral-500" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">No products yet</h3>
-            <p className="text-sm text-slate-500 mb-6">
+            <h3 className="text-lg font-semibold text-neutral-800 mb-2">No products yet</h3>
+            <p className="text-sm text-neutral-500 mb-6">
               {selectedCategory === 'All Products'
                 ? 'Start by adding your first product'
                 : `No products in ${selectedCategory} yet`}
             </p>
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 rounded-lg bg-[#171719] px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#2A2A2D]"
+              className="flex items-center gap-2 rounded-lg bg-[#171717] px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-black/10 transition hover:bg-[#404040]"
             >
               <Plus size={18} />
               <span>Add Your First Product</span>

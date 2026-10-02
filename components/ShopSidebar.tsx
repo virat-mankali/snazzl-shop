@@ -44,7 +44,7 @@ const navItems = [
 
 export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
   return (
-    <aside className="w-[248px] shrink-0 border-r border-slate-200/80 bg-[#171719] text-white">
+    <aside className="w-[248px] shrink-0 border-r border-neutral-200/80 bg-[#171717] text-white">
       <div className="sticky top-0 flex h-screen flex-col px-4 py-5">
         <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-3 ring-1 ring-white/10">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
@@ -58,7 +58,7 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
           </div>
           <div>
             <span className="block text-sm font-semibold leading-4">Snazzl</span>
-            <span className="text-xs text-slate-400">Shop workspace</span>
+            <span className="text-xs text-neutral-400">Shop workspace</span>
           </div>
         </div>
 
@@ -68,8 +68,8 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
             const isActive = activeItem === item.id;
             const className = `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
               isActive
-                ? "bg-[#F8EEE8] text-[#171719] shadow-lg shadow-black/10"
-                : "text-slate-400 hover:bg-white/10 hover:text-white"
+                ? "bg-white text-[#171717] shadow-lg shadow-black/10"
+                : "text-neutral-400 hover:bg-white/10 hover:text-white"
             }`;
 
             if (!item.href) {
@@ -81,7 +81,7 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
                 >
                   <Icon size={18} />
                   <span>{item.label}</span>
-                  <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-full bg-white px-2 py-0.5 text-xs text-slate-900 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                  <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-full bg-white px-2 py-0.5 text-xs text-neutral-900 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                     Coming Soon
                   </span>
                 </button>
@@ -98,9 +98,9 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
         </nav>
 
         <div className="mt-auto rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-          <div className="text-xs font-medium text-slate-400">Today</div>
+          <div className="text-xs font-medium text-neutral-400">Today</div>
           <div className="mt-1 text-lg font-semibold">Live operations</div>
-          <p className="mt-1 text-xs leading-5 text-slate-400">
+          <p className="mt-1 text-xs leading-5 text-neutral-400">
             Track new orders, stock and payouts from one place.
           </p>
         </div>

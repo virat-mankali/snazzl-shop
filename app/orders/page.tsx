@@ -193,18 +193,18 @@ export default function OrdersPage() {
 
   return (
     <ShopAuthGuard>
-    <div className="flex min-h-screen bg-[#F1F1F1]">
+    <div className="flex min-h-screen bg-[#FAFAFA]">
       <ShopSidebar activeItem="orders" />
       <div className="min-w-0 flex-1">
       <ShopTopbar title="Orders" description="Accept, reject and hand over active customer orders.">
         <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
           <input
             type="text"
             placeholder="Search by ID, name, status"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 w-72 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#D4A373] focus:bg-white focus:ring-3 focus:ring-[#F3E7D7]"
+            className="h-9 w-72 rounded-lg border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#171717] focus:bg-white focus:ring-3 focus:ring-[#D4D4D4]"
           />
         </div>
       </ShopTopbar>
@@ -212,7 +212,7 @@ export default function OrdersPage() {
       {/* Main Content */}
       <main className="p-6">
         {/* Tabs */}
-        <div className="mb-6 flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+        <div className="mb-6 flex items-center gap-1 rounded-xl border border-neutral-200 bg-white p-2 shadow-sm">
           {tabs.map((tab) => {
             const displayLabel = tab.label === 'All Orders' ? 'All Orders' :
               tab.label === 'placed' ? 'New Orders' :
@@ -226,8 +226,8 @@ export default function OrdersPage() {
                 onClick={() => setSelectedTab(tab.label)}
                 className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   selectedTab === tab.label
-                    ? 'bg-[#171719] text-white'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-[#171719]'
+                    ? 'bg-[#171717] text-white'
+                    : 'text-neutral-600 hover:bg-neutral-50 hover:text-[#171717]'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -239,8 +239,8 @@ export default function OrdersPage() {
         </div>
 
         {/* Table Header */}
-        <div className="rounded-t-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <div className="grid grid-cols-5 gap-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-t-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+          <div className="grid grid-cols-5 gap-4 text-xs font-semibold uppercase tracking-wide text-neutral-500">
             <div>Product</div>
             <div className="text-center">Price</div>
             <div className="text-center">Payment</div>
@@ -252,8 +252,8 @@ export default function OrdersPage() {
         {/* Orders List */}
         <div className="mt-2">
           {queriedConvexOrders === undefined ? (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-              <p className="text-slate-500">Loading orders...</p>
+            <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-neutral-500">Loading orders...</p>
             </div>
           ) : filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
@@ -269,8 +269,8 @@ export default function OrdersPage() {
               />
             ))
           ) : (
-            <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-              <p className="text-slate-500">No orders found</p>
+            <div className="rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
+              <p className="text-neutral-500">No orders found</p>
             </div>
           )}
         </div>
