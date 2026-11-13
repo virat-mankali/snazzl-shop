@@ -11,7 +11,10 @@ import {
   productCategories,
 } from '@/lib/productCategories';
 import Toast from './Toast';
-import type { ProductRecord } from './ProductDetailsModal';
+import { photoViews, type ProductRecord } from './ProductDetailsModal';
+
+type PhotoSlot = (typeof photoViews)[number][0];
+type PhotoDraft = { file: File; preview: string; reference?: string };
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -66,6 +69,8 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [images, setImages] = useState<ImageUpload[]>([]);
+  const [photoDrafts, setPhotoDrafts] = useState<Partial<Record<PhotoSlot, PhotoDraft>>>({});
+  const photoPreviews = useRef<Partial<Record<PhotoSlot, string>>>({});
   const [coverImage, setCoverImage] = useState<{ file: File | null; preview: string | null }>({ 
     file: null, 
     preview: null 
@@ -152,6 +157,19 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
     const dialog = dialogRef.current;
     if (original && isOpen && dialog && !dialog.open) dialog.showModal();
   }, [original, isOpen]);
+
+  useEffect(() => {
+    const previews = photoPreviews.current;
+    return () => Object.values(previews).forEach((preview) => URL.revokeObjectURL(preview));
+  }, []);
+
+  const choosePhoto = (slot: PhotoSlot, file: File) => {
+    const previous = photoPreviews.current[slot];
+    if (previous) URL.revokeObjectURL(previous);
+    const preview = URL.createObjectURL(file);
+    photoPreviews.current[slot] = preview;
+    setPhotoDrafts((drafts) => ({ ...drafts, [slot]: { file, preview } }));
+  };
 
   // Helper function to resize image to max 2MB
   const resizeImage = async (file: File): Promise<Blob> => {
@@ -257,12 +275,30 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
 
       try {
         setToast(null);
+        const editedViews = photoViews.filter(([slot]) => photoDrafts[slot]);
+        if (editedViews.length && photoViews.some(([slot]) => !photoDrafts[slot] && !original.product_images?.[slot])) {
+          setToast({ message: 'Add all five product photos before saving photo changes.', type: 'error' });
+          return;
+        }
         setIsSubmitting(true);
-        if (Object.keys(updates).length) await editProduct({ productId: original._id, ...updates });
+        const photos = [];
+        for (const [slot, label] of editedViews) {
+          const draft = photoDrafts[slot];
+          if (!draft) continue;
+          setUploadProgress(`Uploading ${label.toLowerCase()} photo…`);
+          const reference = draft.reference ?? await uploadImage(draft.file);
+          setPhotoDrafts((drafts) => ({ ...drafts, [slot]: { ...draft, reference } }));
+          photos.push({ slot, reference, previousUrl: original.product_images?.[slot] ?? null });
+        }
+        if (photos.length || Object.keys(updates).length) {
+          setUploadProgress('Saving changes…');
+          await editProduct({ productId: original._id, ...updates, ...(photos.length && { photos }) });
+        }
         dialogRef.current?.close();
       } catch (error) {
         setToast({ message: getErrorMessage(error), type: 'error' });
       } finally {
+        setUploadProgress('');
         setIsSubmitting(false);
       }
       return;
@@ -303,6 +339,10 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
     }
     if (!stock || parseInt(stock) < 0) {
       setToast({ message: 'Please enter a valid stock quantity', type: 'error' });
+      return;
+    }
+    if (!coverImage.file || images.length !== photoViews.length - 1) {
+      setToast({ message: 'Add all five product photos before publishing.', type: 'error' });
       return;
     }
 
@@ -453,7 +493,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
           <div className={original ? '' : 'grid gap-6 lg:grid-cols-3'}>
             {/* Left Column - Image Upload */}
             {!original && <div className="bg-white rounded-xl p-6">
-              <h3 className="text-sm font-medium text-neutral-700 mb-4">Upload Image</h3>
+              <h3 className="text-sm font-medium text-neutral-700 mb-4">Product photos (all five required)</h3>
               
               {/* Cover Image Upload */}
               <div 
@@ -528,7 +568,48 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
             </div>}
 
             {/* Right Columns - Form Fields */}
-            <div className="col-span-2 space-y-6">
+            <fieldset disabled={isSubmitting} className="col-span-2 min-w-0 space-y-6">
+              {original && (
+                <fieldset className="min-w-0 rounded-xl border border-neutral-200 bg-white p-4">
+                  <legend className="px-1 text-sm font-semibold text-black">Product photos</legend>
+                  <p className="mb-3 text-sm text-neutral-600">All five views are required when you update photos.</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    {photoViews.map(([slot, label]) => {
+                      const current = original.product_images?.[slot];
+                      const draft = photoDrafts[slot];
+                      const preview = draft?.preview ?? current;
+                      const action = current || draft ? 'Replace' : 'Add';
+                      return (
+                        <div key={slot} className="min-w-0 space-y-2">
+                          {preview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={preview} alt={`${label} photo`} className="aspect-square w-full rounded-lg border border-neutral-200 bg-neutral-50 object-contain" />
+                          ) : (
+                            <div className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-500">
+                              Missing
+                            </div>
+                          )}
+                          <p className="text-sm font-medium text-neutral-800">{label}</p>
+                          <label className="relative block cursor-pointer rounded-lg border border-neutral-200 px-2 py-1.5 text-center text-sm text-neutral-800 hover:bg-neutral-50 focus-within:ring-2 focus-within:ring-neutral-700">
+                            {action}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                              aria-label={`${action} ${label.toLowerCase()} photo`}
+                              className="sr-only"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) choosePhoto(slot, file);
+                                event.target.value = '';
+                              }}
+                            />
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
               {/* Row 1 - Product Name */}
               <div>
                 <label htmlFor={`${titleId}-name`} className="block text-sm font-medium text-black mb-2">Product Name</label>
@@ -788,7 +869,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess, product }:
                   className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D4D4D4] text-black placeholder:text-neutral-400 resize-none"
                 />
               </div>
-            </div>
+            </fieldset>
           </div>
         </div>
       </div>

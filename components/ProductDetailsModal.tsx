@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { ImageOff, Pencil, X } from 'lucide-react';
 
-const photoViews = [
+export const photoViews = [
   ['cover_image', 'Cover'],
   ['front_image', 'Front'],
   ['left_image', 'Left'],
