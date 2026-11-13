@@ -9,9 +9,11 @@ interface ProductCardProps {
   stock: number;
   sold: number;
   categoryPath?: string;
+  onOpen: (id: string) => void;
 }
 
 function ProductCard({
+  id,
   name,
   image,
   price,
@@ -19,16 +21,17 @@ function ProductCard({
   stock,
   sold,
   categoryPath,
+  onOpen,
 }: ProductCardProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md">
+    <div className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md focus-within:ring-2 focus-within:ring-neutral-800 focus-within:ring-offset-2">
       <div className="relative aspect-[4/3] bg-neutral-100">
         <img
           src={image}
           alt={name}
           className="w-full h-full object-cover"
         />
-        {salePrice && (
+        {salePrice != null && (
           <div className="absolute right-3 top-3 rounded-full bg-[#171717] px-2.5 py-1 shadow-sm">
             <span className="text-xs font-semibold text-white">Sale</span>
           </div>
@@ -44,7 +47,7 @@ function ProductCard({
         ) : null}
 
         <div className="mt-2 flex items-center gap-2">
-          {salePrice ? (
+          {salePrice != null ? (
             <>
               <span className="text-xs text-neutral-400 line-through">₹{price}</span>
               <span className="text-sm font-semibold text-[#171717]">₹{salePrice}</span>
@@ -65,6 +68,13 @@ function ProductCard({
           </div>
         </div>
       </div>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-label={`View details for ${name}`}
+        onClick={() => onOpen(id)}
+        className="absolute inset-0 cursor-pointer rounded-xl focus:outline-none"
+      />
     </div>
   );
 }

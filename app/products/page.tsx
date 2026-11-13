@@ -9,6 +9,7 @@ import {
   X
 } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
+import ProductDetailsModal, { type ProductRecord } from '@/components/ProductDetailsModal';
 import AddProductModal from '@/components/AddProductModal';
 import ShopAuthGuard from '@/components/ShopAuthGuard';
 import ShopSidebar from '@/components/ShopSidebar';
@@ -29,39 +30,25 @@ const timeFilters = [
   { label: 'Past 365 days', value: '365' }
 ];
 
-type ProductRecord = {
-  _id: string;
-  product_name: string;
-  product_images?: {
-    cover_image?: string;
-  };
-  category?: {
-    main_category?: string;
-    sub_category?: string;
-    sub_sub_category?: string;
-  };
-  price: {
-    base_price: number;
-    discount: number;
-  };
-  stock?: number;
-};
-
-const getCurrentBrandStoreProducts = makeFunctionReference<"query">(
+const getCurrentBrandStoreProducts = makeFunctionReference<"query", Record<string, never>, ProductRecord[]>(
   "products:getCurrentBrandStoreProducts"
 );
+
+function getSalePrice({ base_price, discount }: ProductRecord['price']) {
+  return discount > 0 ? Math.round(base_price * (1 - discount / 100)) : null;
+}
 
 export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [showTimeFilter, setShowTimeFilter] = useState(false);
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('Last week');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   // Fetch current user's products from Convex
-  const queriedProducts = useQuery(getCurrentBrandStoreProducts) as
-    | ProductRecord[]
-    | undefined;
+  const queriedProducts = useQuery(getCurrentBrandStoreProducts);
   const products = queriedProducts ?? [];
+  const selectedProduct = products.find((product) => product._id === selectedProductId);
   const visibleProducts =
     selectedCategory === 'All Products'
       ? products
@@ -202,10 +189,11 @@ export default function ProductsPage() {
               <ProductCard
                 key={product._id}
                 id={product._id}
+                onOpen={setSelectedProductId}
                 name={product.product_name}
                 image={product.product_images?.cover_image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop'}
                 price={product.price.base_price}
-                salePrice={product.price.discount > 0 ? Math.round(product.price.base_price * (1 - product.price.discount / 100)) : null}
+                salePrice={getSalePrice(product.price)}
                 stock={product.stock || 0}
                 sold={0}
                 categoryPath={[
@@ -220,6 +208,14 @@ export default function ProductsPage() {
           </div>
         )}
       </main>
+
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          salePrice={getSalePrice(selectedProduct.price)}
+          onClose={() => setSelectedProductId(null)}
+        />
+      )}
 
       {/* Add Product Modal */}
       <AddProductModal 
