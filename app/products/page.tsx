@@ -9,12 +9,13 @@ import {
   X
 } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
-import ProductDetailsModal, { type ProductRecord } from '@/components/ProductDetailsModal';
+import ProductDetailsModal, { type ListingAction, type ProductRecord } from '@/components/ProductDetailsModal';
 import AddProductModal from '@/components/AddProductModal';
 import ShopAuthGuard from '@/components/ShopAuthGuard';
 import ShopSidebar from '@/components/ShopSidebar';
 import ShopTopbar from '@/components/ShopTopbar';
-import { useQuery } from 'convex/react';
+import Toast from '@/components/Toast';
+import { useMutation, useQuery } from 'convex/react';
 import { makeFunctionReference } from 'convex/server';
 import { productCategories } from '@/lib/productCategories';
 
@@ -33,6 +34,9 @@ const timeFilters = [
 const getCurrentBrandStoreProducts = makeFunctionReference<"query", Record<string, never>, ProductRecord[]>(
   "products:getCurrentBrandStoreProducts"
 );
+const setListingStatus = makeFunctionReference<"mutation", { productId: string; status: ListingAction }, null>(
+  "productEdits:setListingStatus"
+);
 
 function getSalePrice({ base_price, discount }: ProductRecord['price']) {
   return discount > 0 ? Math.round(base_price * (1 - discount / 100)) : null;
@@ -45,6 +49,8 @@ export default function ProductsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
+  const [notice, setNotice] = useState('');
+  const updateListing = useMutation(setListingStatus);
 
   // Fetch current user's products from Convex
   const queriedProducts = useQuery(getCurrentBrandStoreProducts);
@@ -191,6 +197,7 @@ export default function ProductsPage() {
                 key={product._id}
                 id={product._id}
                 onOpen={setSelectedProductId}
+                unpublished={product.listingStatus === 'unpublished'}
                 name={product.product_name}
                 image={product.product_images?.cover_image || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop'}
                 price={product.price.base_price}
@@ -219,6 +226,13 @@ export default function ProductsPage() {
             setSelectedProductId(null);
           }}
           onEdit={() => setIsEditingProduct(true)}
+          onListingAction={async (status) => {
+            await updateListing({ productId: selectedProduct._id, status });
+            if (status === 'deleted') {
+              setSelectedProductId(null);
+              setNotice('Product deleted.');
+            }
+          }}
         />
       )}
 
@@ -237,6 +251,7 @@ export default function ProductsPage() {
         onClose={() => setShowAddModal(false)}
         onSuccess={handleProductAdded}
       />
+      {notice && <Toast message={notice} type="success" onClose={() => setNotice('')} />}
       </div>
     </div>
     </ShopAuthGuard>

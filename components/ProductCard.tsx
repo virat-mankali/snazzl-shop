@@ -10,6 +10,7 @@ interface ProductCardProps {
   sold: number;
   categoryPath?: string;
   onOpen: (id: string) => void;
+  unpublished?: boolean;
 }
 
 function ProductCard({
@@ -22,6 +23,7 @@ function ProductCard({
   sold,
   categoryPath,
   onOpen,
+  unpublished,
 }: ProductCardProps) {
   return (
     <div className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md focus-within:ring-2 focus-within:ring-neutral-800 focus-within:ring-offset-2">
@@ -40,6 +42,7 @@ function ProductCard({
 
       <div className="p-3.5">
         <h3 className="line-clamp-1 text-sm font-semibold text-[#171717]">{name}</h3>
+        {unpublished && <p className="mt-1 text-xs font-medium text-neutral-600">Unpublished</p>}
         {categoryPath ? (
           <p className="mt-1 line-clamp-1 text-[11px] font-medium text-neutral-500">
             {categoryPath}
