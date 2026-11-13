@@ -44,6 +44,7 @@ export default function ProductsPage() {
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('Last week');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
 
   // Fetch current user's products from Convex
   const queriedProducts = useQuery(getCurrentBrandStoreProducts);
@@ -213,7 +214,20 @@ export default function ProductsPage() {
         <ProductDetailsModal
           product={selectedProduct}
           salePrice={getSalePrice(selectedProduct.price)}
-          onClose={() => setSelectedProductId(null)}
+          onClose={() => {
+            setIsEditingProduct(false);
+            setSelectedProductId(null);
+          }}
+          onEdit={() => setIsEditingProduct(true)}
+        />
+      )}
+
+      {selectedProduct && isEditingProduct && (
+        <AddProductModal
+          key={selectedProduct._id}
+          isOpen
+          product={selectedProduct}
+          onClose={() => setIsEditingProduct(false)}
         />
       )}
 

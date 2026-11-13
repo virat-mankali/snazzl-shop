@@ -1,20 +1,23 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useId, useState, useRef } from 'react';
 import { X, Upload, Trash2, ChevronDown } from 'lucide-react';
 import { useAction, useMutation } from 'convex/react';
 import { makeFunctionReference } from 'convex/server';
+import { ConvexError } from 'convex/values';
 import {
   getProductCategory,
   getProductCategorySection,
   productCategories,
 } from '@/lib/productCategories';
 import Toast from './Toast';
+import type { ProductRecord } from './ProductDetailsModal';
 
 interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  product?: ProductRecord;
 }
 
 const FITS = [
@@ -39,10 +42,14 @@ interface ImageUpload {
 const addProductMutation = makeFunctionReference<"mutation">(
   "products:addProduct"
 );
+const editProductMutation = makeFunctionReference<"mutation">("productEdits:update");
 const createProductUploadMutation = makeFunctionReference<"mutation">("media:createProductUpload");
 const finishProductUploadAction = makeFunctionReference<"action">("media:finishProductUpload");
 
 const getErrorMessage = (error: unknown) => {
+  if (error instanceof ConvexError && typeof error.data === 'string') {
+    return error.data;
+  }
   if (error instanceof Error) {
     return error.message;
   }
@@ -51,29 +58,32 @@ const getErrorMessage = (error: unknown) => {
     return error;
   }
 
-  return 'Failed to add product. Please try again.';
+  return 'Could not save the product. Please try again.';
 };
 
-export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProductModalProps) {
+export default function AddProductModal({ isOpen, onClose, onSuccess, product }: AddProductModalProps) {
+  const [original] = useState(product);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const [images, setImages] = useState<ImageUpload[]>([]);
   const [coverImage, setCoverImage] = useState<{ file: File | null; preview: string | null }>({ 
     file: null, 
     preview: null 
   });
-  const [productName, setProductName] = useState('');
-  const [colors, setColors] = useState<Array<{ name: string; picker: string }>>([
-    { name: '', picker: '#000000' }
-  ]);
-  const [mainCategory, setMainCategory] = useState('');
-  const [subCategory, setSubCategory] = useState('');
-  const [subSubCategory, setSubSubCategory] = useState('');
-  const [fit, setFit] = useState('');
-  const [availableSizes, setAvailableSizes] = useState<number[]>([]);
-  const [basePrice, setBasePrice] = useState('');
-  const [discount, setDiscount] = useState('');
-  const [material, setMaterial] = useState('');
-  const [productDescription, setProductDescription] = useState('');
-  const [stock, setStock] = useState('');
+  const [productName, setProductName] = useState(original?.product_name ?? '');
+  const [colors, setColors] = useState(() => original?.colors?.length
+    ? original.colors.map((color) => ({ ...color }))
+    : [{ name: '', picker: '#000000' }]);
+  const [mainCategory, setMainCategory] = useState(original?.category?.main_category ?? '');
+  const [subCategory, setSubCategory] = useState(original?.category?.sub_category ?? '');
+  const [subSubCategory, setSubSubCategory] = useState(original?.category?.sub_sub_category ?? '');
+  const [fit, setFit] = useState(original?.size?.fit ?? '');
+  const [availableSizes, setAvailableSizes] = useState(original?.size?.available_sizes ?? []);
+  const [basePrice, setBasePrice] = useState(original ? String(original.price.base_price) : '');
+  const [discount, setDiscount] = useState(original ? String(original.price.discount) : '');
+  const [material, setMaterial] = useState(original?.material ?? '');
+  const [productDescription, setProductDescription] = useState(original?.product_description ?? '');
+  const [stock, setStock] = useState(original?.stock == null ? '' : String(original.stock));
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showFitDropdown, setShowFitDropdown] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
@@ -88,7 +98,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
     'Product right side image'
   ];
 
-  const commonSizes = [28, 30, 32, 34, 36, 38, 40, 42];
+  const commonSizes = [...new Set([28, 30, 32, 34, 36, 38, 40, 42, ...(original?.size?.available_sizes ?? [])])].sort((a, b) => a - b);
   const selectedMainCategory = getProductCategory(mainCategory);
   const selectedSubCategory = getProductCategorySection(mainCategory, subCategory);
 
@@ -133,9 +143,15 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   };
 
   const addProduct = useMutation(addProductMutation);
+  const editProduct = useMutation(editProductMutation);
   const createProductUpload = useMutation(createProductUploadMutation);
   const finishProductUpload = useAction(finishProductUploadAction);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (original && isOpen && dialog && !dialog.open) dialog.showModal();
+  }, [original, isOpen]);
 
   // Helper function to resize image to max 2MB
   const resizeImage = async (file: File): Promise<Blob> => {
@@ -219,6 +235,39 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
   };
 
   const handleSubmit = async () => {
+    if (original) {
+      const nextColors = colors.filter((color) => color.name.trim());
+      const categoryChanged = mainCategory !== (original.category?.main_category ?? '')
+        || subCategory !== (original.category?.sub_category ?? '')
+        || subSubCategory !== (original.category?.sub_sub_category ?? '');
+      const sizeChanged = fit !== (original.size?.fit ?? '')
+        || availableSizes.join(',') !== (original.size?.available_sizes ?? []).join(',');
+      const priceChanged = basePrice !== String(original.price.base_price) || discount !== String(original.price.discount);
+      const stockChanged = stock !== (original.stock == null ? '' : String(original.stock));
+      const updates = {
+        ...(productName !== original.product_name && { product_name: productName }),
+        ...(productDescription !== original.product_description && { product_description: productDescription }),
+        ...(material !== original.material && { material }),
+        ...(JSON.stringify(nextColors) !== JSON.stringify(original.colors ?? []) && { colors: nextColors }),
+        ...(categoryChanged && { category: { main_category: mainCategory, sub_category: subCategory, sub_sub_category: subSubCategory } }),
+        ...(sizeChanged && { size: { fit, available_sizes: availableSizes } }),
+        ...(priceChanged && { price: { base_price: Number(basePrice), discount: Number(discount) } }),
+        ...(stockChanged && { inventory: { previousStock: original.stock ?? 0, stock: stock.trim() ? Number(stock) : NaN } }),
+      };
+
+      try {
+        setToast(null);
+        setIsSubmitting(true);
+        if (Object.keys(updates).length) await editProduct({ productId: original._id, ...updates });
+        dialogRef.current?.close();
+      } catch (error) {
+        setToast({ message: getErrorMessage(error), type: 'error' });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     // Validation
     if (!productName.trim()) {
       setToast({ message: 'Please enter a product name', type: 'error' });
@@ -356,26 +405,22 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
 
   if (!isOpen) return null;
 
-  return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="bg-neutral-50 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+  const content = (
+    <>
+      <div className={original ? 'bg-neutral-50' : 'bg-neutral-50 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto'}>
         {/* Header */}
         <div className="bg-white border-b border-neutral-200 px-6 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
-                onClick={onClose}
+                onClick={() => original ? dialogRef.current?.close() : onClose()}
                 disabled={isSubmitting}
+                aria-label={original ? 'Cancel editing' : 'Close add product'}
                 className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-500 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X size={20} />
               </button>
-              <h2 className="text-xl font-semibold text-black">Add Products</h2>
+              <h2 id={titleId} className="text-xl font-semibold text-black">{original ? 'Edit product' : 'Add Products'}</h2>
             </div>
             <div className="flex items-center gap-3">
               <button 
@@ -383,10 +428,15 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                 disabled={isSubmitting}
                 className="px-6 py-2 bg-[#171717] text-white rounded-lg hover:bg-[#404040] font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Publishing...' : 'Publish'}
+                {original ? (isSubmitting ? 'Saving…' : 'Save changes') : (isSubmitting ? 'Publishing...' : 'Publish')}
               </button>
             </div>
           </div>
+          {original && toast && (
+            <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {toast.message}
+            </p>
+          )}
           {/* Progress Indicator */}
           {uploadProgress && (
             <div className="mt-3 flex items-center gap-3">
@@ -400,9 +450,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
 
         {/* Content */}
         <div className="p-6">
-          <div className="grid grid-cols-3 gap-6">
+          <div className={original ? '' : 'grid gap-6 lg:grid-cols-3'}>
             {/* Left Column - Image Upload */}
-            <div className="bg-white rounded-xl p-6">
+            {!original && <div className="bg-white rounded-xl p-6">
               <h3 className="text-sm font-medium text-neutral-700 mb-4">Upload Image</h3>
               
               {/* Cover Image Upload */}
@@ -475,14 +525,15 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                 onChange={handleImageUpload}
                 className="hidden"
               />
-            </div>
+            </div>}
 
             {/* Right Columns - Form Fields */}
             <div className="col-span-2 space-y-6">
               {/* Row 1 - Product Name */}
               <div>
-                <label className="block text-sm font-medium text-black mb-2">Product Name</label>
+                <label htmlFor={`${titleId}-name`} className="block text-sm font-medium text-black mb-2">Product Name</label>
                 <input
+                  id={`${titleId}-name`}
                   type="text"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
@@ -496,13 +547,14 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                 <label className="block text-sm font-medium text-black mb-2">Colors</label>
                 <div className="space-y-3">
                   {colors.map((color, index) => (
-                    <div key={index} className="flex gap-2 items-center">
+                    <div key={index} className="flex flex-wrap gap-2 items-center">
                       <input
                         type="text"
+                        aria-label={`Color ${index + 1} name`}
                         value={color.name}
                         onChange={(e) => {
                           const newColors = [...colors];
-                          newColors[index].name = e.target.value;
+                          newColors[index] = { ...color, name: e.target.value };
                           setColors(newColors);
                         }}
                         placeholder="Dark Blue"
@@ -510,20 +562,22 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                       />
                       <input
                         type="color"
+                        aria-label={`Color ${index + 1} swatch`}
                         value={color.picker}
                         onChange={(e) => {
                           const newColors = [...colors];
-                          newColors[index].picker = e.target.value;
+                          newColors[index] = { ...color, picker: e.target.value };
                           setColors(newColors);
                         }}
                         className="w-12 h-10 border border-neutral-200 rounded-lg cursor-pointer"
                       />
                       <input
                         type="text"
+                        aria-label={`Color ${index + 1} hex code`}
                         value={color.picker}
                         onChange={(e) => {
                           const newColors = [...colors];
-                          newColors[index].picker = e.target.value;
+                          newColors[index] = { ...color, picker: e.target.value };
                           setColors(newColors);
                         }}
                         placeholder="#00008B"
@@ -532,6 +586,7 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                       {colors.length > 1 && (
                         <button
                           onClick={() => setColors(colors.filter((_, i) => i !== index))}
+                          aria-label={`Remove color ${index + 1}`}
                           className="p-2 text-[#C86565] hover:bg-[#F7E4E4] rounded-lg"
                         >
                           <X size={18} />
@@ -669,8 +724,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               {/* Row 5 - Price */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-2">Base Price (₹)</label>
+                  <label htmlFor={`${titleId}-price`} className="block text-sm font-medium text-black mb-2">Base Price (₹)</label>
                   <input
+                    id={`${titleId}-price`}
                     type="number"
                     value={basePrice}
                     onChange={(e) => setBasePrice(e.target.value)}
@@ -679,8 +735,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-2">Discount (%)</label>
+                  <label htmlFor={`${titleId}-discount`} className="block text-sm font-medium text-black mb-2">Discount (%)</label>
                   <input
+                    id={`${titleId}-discount`}
                     type="number"
                     value={discount}
                     onChange={(e) => setDiscount(e.target.value)}
@@ -695,8 +752,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
               {/* Row 6 - Material & Stock */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-2">Material</label>
+                  <label htmlFor={`${titleId}-material`} className="block text-sm font-medium text-black mb-2">Material</label>
                   <input
+                    id={`${titleId}-material`}
                     type="text"
                     value={material}
                     onChange={(e) => setMaterial(e.target.value)}
@@ -705,8 +763,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-2">Stock Quantity</label>
+                  <label htmlFor={`${titleId}-stock`} className="block text-sm font-medium text-black mb-2">Stock Quantity</label>
                   <input
+                    id={`${titleId}-stock`}
                     type="number"
                     value={stock}
                     onChange={(e) => setStock(e.target.value)}
@@ -719,8 +778,9 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
 
               {/* Row 7 - Product Description */}
               <div>
-                <label className="block text-sm font-medium text-black mb-2">Product Description</label>
+                <label htmlFor={`${titleId}-description`} className="block text-sm font-medium text-black mb-2">Product Description</label>
                 <textarea
+                  id={`${titleId}-description`}
                   value={productDescription}
                   onChange={(e) => setProductDescription(e.target.value)}
                   placeholder="Classic dark blue slim fit jeans made from stretchable denim fabric."
@@ -733,14 +793,36 @@ export default function AddProductModal({ isOpen, onClose, onSuccess }: AddProdu
         </div>
       </div>
       
-      {/* Toast */}
-      {toast && (
+      {toast && !original && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
         />
       )}
+    </>
+  );
+
+  if (original) {
+    return (
+      <dialog
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        onClose={onClose}
+        onCancel={(event) => { if (isSubmitting) event.preventDefault(); }}
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overscroll-contain rounded-2xl border border-neutral-200 bg-neutral-50 p-0 shadow-xl backdrop:bg-black/50"
+      >
+        {content}
+      </dialog>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={(event) => { if (event.target === event.currentTarget && !isSubmitting) onClose(); }}
+    >
+      {content}
     </div>
   );
 }

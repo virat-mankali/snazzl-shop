@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
-import { ImageOff, X } from 'lucide-react';
+import { ImageOff, Pencil, X } from 'lucide-react';
 
 const photoViews = [
   ['cover_image', 'Cover'],
@@ -37,10 +37,12 @@ export default function ProductDetailsModal({
   product,
   salePrice,
   onClose,
+  onEdit,
 }: {
   product: ProductRecord;
   salePrice: number | null;
   onClose: () => void;
+  onEdit: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -86,14 +88,25 @@ export default function ProductDetailsModal({
     >
       <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-neutral-200 bg-white px-5 py-4 sm:px-6">
         <h2 id={titleId} className="min-w-0 wrap-anywhere text-xl font-semibold">{product.product_name}</h2>
-        <button
-          type="button"
-          aria-label="Close product details"
-          onClick={() => dialogRef.current?.close()}
-          className="shrink-0 rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-800"
-        >
-          <X size={20} aria-hidden="true" />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={onEdit}
+            className="flex items-center gap-2 rounded-lg bg-[#171717] px-3 py-2 text-sm font-medium text-white hover:bg-[#404040]"
+          >
+            <Pencil size={14} aria-hidden="true" />
+            Edit
+          </button>
+          <button
+            type="button"
+            aria-label="Close product details"
+            onClick={() => dialogRef.current?.close()}
+            className="shrink-0 rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-800"
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <div className="grid gap-6 p-5 sm:p-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
