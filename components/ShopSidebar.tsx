@@ -1,10 +1,21 @@
 "use client";
 
-import { BarChart2, ClipboardList, LayoutDashboard, Package } from "lucide-react";
+import {
+  BarChart2,
+  ClipboardList,
+  LayoutDashboard,
+  Package,
+  Wallet,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-type ShopSidebarItem = "overview" | "products" | "orders" | "analytics";
+type ShopSidebarItem =
+  | "overview"
+  | "products"
+  | "orders"
+  | "earnings"
+  | "analytics";
 
 type ShopSidebarProps = {
   activeItem: ShopSidebarItem;
@@ -29,6 +40,7 @@ const navItems = [
     href: "/orders",
     icon: ClipboardList,
   },
+  { id: "earnings", label: "Earnings", href: "/earnings", icon: Wallet },
   {
     id: "analytics",
     label: "Analytics",
@@ -44,9 +56,9 @@ const navItems = [
 
 export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
   return (
-    <aside className="w-[248px] shrink-0 border-r border-neutral-200/80 bg-[#171717] text-white">
-      <div className="sticky top-0 flex h-screen flex-col px-4 py-5">
-        <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-3 ring-1 ring-white/10">
+    <aside className="w-16 sm:w-[248px] shrink-0 border-r border-neutral-200/80 bg-[#171717] text-white">
+      <div className="sticky top-0 flex h-screen flex-col px-2 sm:px-4 py-5">
+        <div className="flex items-center gap-3 rounded-xl bg-white/5 px-1 sm:px-3 py-3 ring-1 ring-white/10">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
             <Image
               src="/logo.png"
@@ -56,8 +68,10 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
               className="rounded"
             />
           </div>
-          <div>
-            <span className="block text-sm font-semibold leading-4">Snazzl</span>
+          <div className="hidden sm:block">
+            <span className="block text-sm font-semibold leading-4">
+              Snazzl
+            </span>
             <span className="text-xs text-neutral-400">Shop workspace</span>
           </div>
         </div>
@@ -77,10 +91,11 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
                 <button
                   key={item.id}
                   type="button"
+                  aria-label={item.label}
                   className={`${className} group relative cursor-default`}
                 >
                   <Icon size={18} />
-                  <span>{item.label}</span>
+                  <span className="hidden sm:inline">{item.label}</span>
                   <span className="absolute left-full top-1/2 ml-2 -translate-y-1/2 rounded-full bg-white px-2 py-0.5 text-xs text-neutral-900 opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                     Coming Soon
                   </span>
@@ -89,15 +104,21 @@ export default function ShopSidebar({ activeItem }: ShopSidebarProps) {
             }
 
             return (
-              <Link key={item.id} href={item.href} className={className}>
+              <Link
+                key={item.id}
+                href={item.href}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                className={className}
+              >
                 <Icon size={18} />
-                <span>{item.label}</span>
+                <span className="hidden sm:inline">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
+        <div className="mt-auto hidden sm:block rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
           <div className="text-xs font-medium text-neutral-400">Today</div>
           <div className="mt-1 text-lg font-semibold">Live operations</div>
           <p className="mt-1 text-xs leading-5 text-neutral-400">
