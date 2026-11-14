@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePaginatedQuery } from "convex/react";
+import { useConvexAuth, usePaginatedQuery } from "convex/react";
 import { makeFunctionReference, type PaginationOptions } from "convex/server";
 import ShopAuthGuard from "@/components/ShopAuthGuard";
 import ShopSidebar from "@/components/ShopSidebar";
@@ -20,12 +20,13 @@ const earningsQuery = makeFunctionReference<
 >("partnerEarnings:list");
 
 function EarningsContent() {
+  const { isAuthenticated } = useConvexAuth();
   const [period, setPeriod] = useState<EarningsPeriod>("month");
   const [now, setNow] = useState(() => Date.now());
   const { start, end } = periodRange(period, now);
   const { results, status, loadMore } = usePaginatedQuery(
     earningsQuery,
-    { start, end },
+    isAuthenticated ? { start, end } : "skip",
     { initialNumItems: 200 },
   );
   useEffect(() => {
